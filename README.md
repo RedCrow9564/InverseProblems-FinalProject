@@ -2,7 +2,7 @@
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](????) [![MIT License](https://img.shields.io/apm/l/atomic-design-ui.svg?)](https://github.com/tterb/atomic-design-ui/blob/master/LICENSEs)![Run Unit-Tests](https://github.com/RedCrow9564/InverseProblems-FinalProject/workflows/Run%20Unit-Tests/badge.svg)![Compute Code Metrics](https://github.com/RedCrow9564/InverseProblems-FinalProject/workflows/Compute%20Code%20Metrics/badge.svg)![GitHub last commit](https://img.shields.io/github/last-commit/RedCrow9564/InverseProblems-FinalProject)
 
-This is a project submitted as a requirement for this course. [The course](https://www30.tau.ac.il/yedion/syllabus.asp?course=0372402501) was administered in Spring 2020 in [Tel-Aviv University - School of Mathematical Sciences](https://en-exact-sciences.tau.ac.il/math), and taught by [Dr. Dimitry Batenkov](https://en-exact-sciences.tau.ac.il/profile/dbatenkov). 
+This is a project submitted as a requirement for this course. [The course](https://www30.tau.ac.il/yedion/syllabus.asp?course=0372402501) was administered in Spring 2020 in [Tel-Aviv University - School of Mathematical Sciences](https://en-exact-sciences.tau.ac.il/math), and taught by [Dr. Dmitry Batenkov](https://en-exact-sciences.tau.ac.il/profile/dbatenkov). 
 This project is a reconstruction of experiments of [[1]](#1) for ??????. A complete documentation of the code is available [here](????)(open it in a web browser).
 
 ## Getting Started
