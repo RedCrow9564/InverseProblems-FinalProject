@@ -21,27 +21,12 @@ class LogFields(BaseEnum):
 
     * ``LogFields.DataType``
 
-    * ``LogFields.ApproximationRank``
-
-    * ``LogFields.ObservationsNumber``
-
-    * ``LogFields.NoisePower``
-
-    * ``LogFields.TrialsNum``
-
-    * ``LogFields.ShiftsDistribution``
-
-    * ``LogFields.MeanError``
+    * ``LogFields.RMSError``
     """
-    DataSize: str = "Data size"
-    DataType = "Data type (complex/real)"
-    ApproximationRank: str = "r"
-    ObservationsNumber: str = "Observations Number"
-    NoisePower: str = "Noise power"
-    TrialsNum: str = "Number of Trials"
-    ShiftsDistribution: str = "Shifts Distribution"
-    MeanError: str = "Mean Error"
-    MaxError: str = "Max Error"
+    DataType: str = "Data type"
+    FilterName: str = "Filter Name"
+    ProjectionsNumber: str = "Projections Number"
+    RMSError: str = "RMS Error"
 
 
 class ExperimentType(BaseEnum):
