@@ -17,15 +17,26 @@ class LogFields(BaseEnum):
     """
     The enum class of fields within experiments logs. Possible values:
 
-    * ``LogFields.DataSize``
-
     * ``LogFields.DataType``
+    
+    * ``LogFields.SolverName``
+    
+    * ``LogFields.Iterations``
+
+    * ``LogFields.FilterName``
+    
+    * ``LogFields.ProjectionsNumber``
+
+    * ``LogFields.SNR``
 
     * ``LogFields.RMSError``
     """
     DataType: str = "Data type"
+    SolverName: str = "Solver name"
+    Iterations: str = "Iterations"
     FilterName: str = "Filter Name"
     ProjectionsNumber: str = "Projections Number"
+    SNR: str = "SNR"
     RMSError: str = "RMS Error"
 
 
@@ -40,3 +51,13 @@ class DBType(BaseEnum):
     SheppLogan: str = "Shepp-Logan Phantom"
     COVID19_CT_Scans: str = "COVID19 CT Scans"
     CT_Medical_Images: str = "CT Medical Images Kaggle DB"
+
+
+class SolverName(BaseEnum):
+    FBP: str = "Filtered-Backprojection"
+    ART: str = "ART"
+    SART: str = "SART"
+    L1Regularization: str = "L1 Regularization"
+    L2Regularization: str = "L2 Regularization"
+    TVRegularization: str = "TV Regularization"
+    

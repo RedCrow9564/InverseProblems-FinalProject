@@ -11,9 +11,10 @@ to the configured results folder. Example for running an experiment: ``python ma
 
 """
 from Infrastructure.utils import ex, DataLog, Dict, Union, List, Scalar, Vector, Matrix, ThreeDMatrix
-from Infrastructure.enums import LogFields, DBType, ExperimentType
+from Infrastructure.enums import LogFields, DBType, ExperimentType, SolverName
 from data_generation import fetch_data
 from Experiments import ExperimentBuilder
+from matplotlib import pyplot as plt
 
 
 @ex.config
@@ -27,7 +28,7 @@ def config():
 
     experiment_name: str = "Test Code"
     database_name: str = DBType.SheppLogan
-    experiment_type: str = ExperimentType.FBPExperiment
+    experiment_type: str = ExperimentType.IterationsExperiment
 
     # Artificial noise config
     noise_config: Dict = {
@@ -42,10 +43,15 @@ def config():
     }
     fbp_experiment_config: Dict = {
         "fbp_filters_list": ["ramp", "hamming"],
-        "projections_number": 160
+        "projections_number": 160,
+        "snr_list": [0.0, 0.5]
     }
     iterations_experiment_config: Dict = {
-        "iterations_list": [1, 2, 3]
+        "max_iterations": 1000,
+        "snr_list": [0.0, 0.5],
+        "projections_number": 160,
+        "alpha": 0.01,
+        "compared_algorithms": [SolverName.L1Regularization]
     }
 
     # Paths config (relative paths, not absolute paths)
@@ -72,8 +78,12 @@ def main(database_name: str, experiment_type: str, experiment_name: str, results
     data: ThreeDMatrix = fetch_data(database_name, 3)
     # Create an experiment object, and then perform the experiment.
     experiment = ExperimentBuilder.create_experiment(experiment_type, data, database_name)
-    print(experiment_type)
     
-    experiment_log: DataLog = experiment.run()
-    print(experiment_log._data[LogFields.RMSError])
+    experiment_log, output_images  = experiment.run()
+    plt.figure()
+    plt.imshow(data[0], cmap="gray")
+    plt.title("Original Image")
+    plt.figure()
+    plt.imshow(output_images[0][0], cmap="gray")
+    plt.title(experiment_log._data[LogFields.SolverName][0])
     experiment_log.save_log(log_file_name=experiment_name, results_folder_path=results_path)

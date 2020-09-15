@@ -45,7 +45,7 @@ def fetch_medical_images_kaggle_db(resources_path: str, ct_medical_images_kaggle
 
 def fetch_shepp_logan_phantom() -> ThreeDMatrix:
     image: Matrix = shepp_logan_phantom()
-    image = rescale(image, scale=0.4, mode='reflect', multichannel=False)
+    image = rescale(image, scale=0.2, mode='reflect', multichannel=False)
     image: ThreeDMatrix = image.reshape((1, image.shape[0], image.shape[1]))
     return image    
     

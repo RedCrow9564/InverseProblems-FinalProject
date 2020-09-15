@@ -9,7 +9,8 @@ from Infrastructure.enums import ExperimentType
 
 class ExperimentBuilder:
     @staticmethod
-    def create_experiment(experiment_type: str, true_images: ThreeDMatrix, data_type: str) -> BaseExperiment:
+    def create_experiment(experiment_type: str, true_images: ThreeDMatrix, 
+                          data_type: str) -> BaseExperiment:
         if experiment_type not in _type_to_constructor:
             raise ValueError("Object type {0} is NOT supported".format(experiment_type))
         else:
@@ -26,7 +27,7 @@ class ExperimentBuilder:
 
     @staticmethod
     def _create_iterations_experiment(true_images: ThreeDMatrix, data_type: str) -> IterationsExperiment:
-        pass
+        return IterationsExperiment(true_images, data_type)
 
 
 _type_to_constructor = {
