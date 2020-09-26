@@ -15,6 +15,7 @@ from Infrastructure.enums import LogFields, DBType, ExperimentType, SolverName
 from data_generation import fetch_data
 from Experiments import ExperimentBuilder
 from matplotlib import pyplot as plt
+import numpy as np
 
 
 @ex.config
@@ -28,7 +29,7 @@ def config():
 
     experiment_name: str = "Test Code"
     database_name: str = DBType.SheppLogan
-    experiment_type: str = ExperimentType.IterationsExperiment
+    experiment_type: str = ExperimentType.SampleRateExperiment
 
     # Artificial noise config
     noise_config: Dict = {
@@ -38,8 +39,12 @@ def config():
     
     # General config for experiments
     sample_rate_experiment_config: Dict = {
-        "ratios_list": [0.5, 1, 1.5, 2, 2.5],
-        "fbp_filters_list": ["ramp", "hamming"]
+        # "ratios_list": [0.5, 1, 1.5, 2, 2.5],
+        # "fbp_filters_list": ["ramp", "hamming"],
+        "projections_number": 160,
+        # "snr_list": [0.0, 0.5],
+        "theta_rates": [1, 2, 3, 4, 5, 6, 10, 12],
+        "displacement_rates": [1, 2, 4]
     }
     fbp_experiment_config: Dict = {
         "fbp_filters_list": ["ramp", "hamming"],
@@ -77,13 +82,42 @@ def main(database_name: str, experiment_type: str, experiment_name: str, results
 
     data: ThreeDMatrix = fetch_data(database_name, 3)
     # Create an experiment object, and then perform the experiment.
+    print("Before creating experiment")
     experiment = ExperimentBuilder.create_experiment(experiment_type, data, database_name)
+
+    print("Before running experiment")
     
     experiment_log, output_images  = experiment.run()
+    print("Experiment done running. {} image reconstructions created from {} images recieved as data".format(
+          len(output_images), len(data)))
+
+    print("Before plotting experiment")
     plt.figure()
     plt.imshow(data[0], cmap="gray")
     plt.title("Original Image")
-    plt.figure()
-    plt.imshow(output_images[0][0], cmap="gray")
-    plt.title(experiment_log._data[LogFields.SolverName][0])
+
+    print(experiment_log._data[LogFields.ThetaRates])
+
+    theta_rates = experiment_log._data[LogFields.ThetaRates][0]
+    displacement_rates = experiment_log._data[LogFields.DisplacementRates][0]
+
+    output_images = np.array(output_images).reshape((len(theta_rates), len(displacement_rates)))
+
+    fig, axes = plt.subplots(len(theta_rates), len(displacement_rates), figsize=(16, 16))
+    axes = np.array(axes).reshape((len(theta_rates), len(displacement_rates)))
+    
+    for i in range(len(theta_rates)):
+        for j in range(len(displacement_rates)):
+            axes[i, j].set_title("Theta rate: {}\nDisp. rate: {}". format(
+                                 theta_rates[i], 
+                                 displacement_rates[j]))
+            axes[i, j].imshow(output_images[i, j], cmap="gray", aspect='equal')
+    
+    # fig.tight_layout()
+    plt.show()
+
+    # plt.figure()
+    # plt.imshow(output_images[0], cmap="gray")
+    # plt.title(experiment_log._data[LogFields.SolverName][0])
+    
     experiment_log.save_log(log_file_name=experiment_name, results_folder_path=results_path)

@@ -19,7 +19,7 @@ class ExperimentBuilder:
 
     @staticmethod
     def _create_sample_rate_experiment(true_images: ThreeDMatrix, data_type: str) -> SampleRateExperiment:
-        pass
+        return SampleRateExperiment(true_images, data_type)
 
     @staticmethod
     def _create_FBP_experiment(true_images: ThreeDMatrix, data_type: str) -> FilteredBackprojectionExperiment:

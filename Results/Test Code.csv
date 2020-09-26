@@ -1,0 +1,2 @@
+Solver name,Projections Number,RMS Error,Data type,Theta Rates,Displacement Rates
+Filtered-Backprojection,160,4.27E-02,Shepp-Logan Phantom,"[1, 2, 3, 4, 5, 6, 10, 12]","[1, 2, 4]"

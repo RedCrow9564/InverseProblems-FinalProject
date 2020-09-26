@@ -38,6 +38,8 @@ class LogFields(BaseEnum):
     ProjectionsNumber: str = "Projections Number"
     SNR: str = "SNR"
     RMSError: str = "RMS Error"
+    ThetaRates: str = "Theta Rates"
+    DisplacementRates: str = "Displacement Rates"
 
 
 class ExperimentType(BaseEnum):

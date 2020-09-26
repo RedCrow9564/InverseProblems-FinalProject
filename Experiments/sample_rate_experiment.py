@@ -1,5 +1,5 @@
 import numpy as np
-from Experiments.base_experiment import BaseExperiment
+from Experiments.base_experiment import BaseExperiment, error_in_circle_pixels
 from Infrastructure.enums import LogFields
 from copy import deepcopy
 from Infrastructure.enums import LogFields, SolverName
@@ -16,21 +16,22 @@ class SampleRateExperiment(BaseExperiment):
     Given a sinogram with axes projection degree and projection displacement,
     it just mean taking some of the information (taking coarser grid)
     """
-    def __init__(self, original_images, data_type, snr_list, theta_num_list,
-                 beam_num_list, _seed):
-        log_fields = [LogFields.SolverName, LogFields.ProjectionsNumber,
-                      LogFields.DataType, LogFields.Iterations, LogFields.SNR,
-                      LogFields.RMSError]
+    @ex.capture(prefix="sample_rate_experiment_config")
+    def __init__(self, original_images, data_type, projections_number: int,
+                 theta_rates: Vector, displacement_rates: Vector, _seed: int):
+        log_fields = [LogFields.SolverName, LogFields.ProjectionsNumber, LogFields.RMSError,
+                      LogFields.DataType, LogFields.ThetaRates,
+                      LogFields.DisplacementRates]
         # Initializes self._true_images, self._data_type,
         # self._save_estimated_images, self.data_log, self._rng
         super(SampleRateExperiment, self).__init__(
             original_images, data_type, _seed, log_fields)
-        self._thetas_list = map(lambda x: np.linspace(0., 180., x, endpoint=False),
-                                theta_num_list)
+        self._thetas: Vector = np.linspace(0., 180., projections_number, endpoint=False)
+        self._displacement_rates = displacement_rates
+        self._theta_rates = theta_rates
         # self._solvers_list = compared_algorithms
-        self._snr_list = snr_list
-        self._alpha = alpha
-        self._max_iterations = max_iterations
+        #self._snr_list = snr_list
+
 
     def run(self) -> DataLog:
         output_images = list()
@@ -41,34 +42,36 @@ class SampleRateExperiment(BaseExperiment):
         estimated_images = list()
 
         for sinogram in sinograms:
-            for displacement_rate in self._displacement_rates:
-                for theta_rate in self._theta_rates:
+            for theta_rate in self._theta_rates:
+                for displacement_rate in self._displacement_rates:
                     downsampled_sinogram = sinogram[::displacement_rate, ::theta_rate]
-                    thetas = self._thetas = self._thetas[::theta_rate]
-            estimated_image: Matrix = solver(downsampled_sinogram, theta=self._thetas)
-            estimated_images.append(estimated_image)
+                    estimated_image: Matrix = solver(downsampled_sinogram, theta=self._thetas[::theta_rate])
+                    estimated_images.append(estimated_image)
+            
 
         estimated_images: ThreeDMatrix = np.array(estimated_images)
 
         
 
         # Perform Radon Transform on every image.
-                # estimated_images = list()
-                # for sinogram in noisy_sinograms:
-                #     estimated_image: Matrix = solver(sinogram, theta=self._thetas, filter_name=filter_name)
-                #     estimated_images.append(estimated_image)
-                # estimated_images: ThreeDMatrix = np.array(estimated_images)
+        # estimated_images = list()
+        # for sinogram in noisy_sinograms:
+        #     estimated_image: Matrix = solver(sinogram, theta=self._thetas, filter_name=filter_name)
+        #     estimated_images.append(estimated_image)
+        # estimated_images: ThreeDMatrix = np.array(estimated_images)
 
         # Calc error and place all results in the log object.
         error: Scalar = error_in_circle_pixels(self._true_images, estimated_images)
         self.data_log.append_dict({
-            # LogFields.ProjectionsNumber: len(self._thetas),
+            LogFields.ProjectionsNumber: len(self._thetas),
             LogFields.DataType: self._data_type,
             # LogFields.SNR: snr,
             LogFields.RMSError: error,
-            LogFields.SolverName: SolverName.FBP
+            LogFields.SolverName: SolverName.FBP,
+            LogFields.ThetaRates: self._theta_rates,
+            LogFields.DisplacementRates: self._displacement_rates
         })
-        output_images.append(deepcopy(estimated_images))
+        output_images = deepcopy(estimated_images)
         
         return self.data_log, output_images
                 
