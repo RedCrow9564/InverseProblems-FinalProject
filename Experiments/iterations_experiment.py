@@ -56,4 +56,3 @@ class IterationsExperiment(BaseExperiment):
                     output_images.append(deepcopy(estimated_images))
         
         return self.data_log, output_images
-        pass

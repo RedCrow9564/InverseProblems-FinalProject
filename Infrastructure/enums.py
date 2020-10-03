@@ -12,7 +12,6 @@ This module contains all possible enums of this project. Most of them are used b
 
 from Infrastructure.utils import BaseEnum
 
-
 class LogFields(BaseEnum):
     """
     The enum class of fields within experiments logs. Possible values:
@@ -38,8 +37,8 @@ class LogFields(BaseEnum):
     ProjectionsNumber: str = "Projections Number"
     SNR: str = "SNR"
     RMSError: str = "RMS Error"
-    ThetaRates: str = "Theta Rates"
-    DisplacementRates: str = "Displacement Rates"
+    ThetaRate: str = "Theta Rate"
+    DisplacementRate: str = "Displacement Rate"
 
 
 class ExperimentType(BaseEnum):

@@ -39,12 +39,11 @@ def config():
     
     # General config for experiments
     sample_rate_experiment_config: Dict = {
-        # "ratios_list": [0.5, 1, 1.5, 2, 2.5],
-        # "fbp_filters_list": ["ramp", "hamming"],
         "projections_number": 160,
-        # "snr_list": [0.0, 0.5],
-        "theta_rates": [1, 2, 3, 4, 5, 6, 10, 12],
-        "displacement_rates": [1, 2, 4]
+        "snr_list": [0.0, 0.5],
+        "compared_algorithms": [SolverName.FBP],
+        "theta_rates": [1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 80],
+        "displacement_rates": [1] # [1, 2, 4]
     }
     fbp_experiment_config: Dict = {
         "fbp_filters_list": ["ramp", "hamming"],
@@ -92,29 +91,32 @@ def main(database_name: str, experiment_type: str, experiment_name: str, results
           len(output_images), len(data)))
 
     print("Before plotting experiment")
-    plt.figure()
-    plt.imshow(data[0], cmap="gray")
-    plt.title("Original Image")
+    experiment.plot('Results\\SampleRateExperiment_4')
 
-    print(experiment_log._data[LogFields.ThetaRates])
+    # print("Before plotting experiment")
+    # plt.figure()
+    # plt.imshow(data[0], cmap="gray")
+    # plt.title("Original Image")
 
-    theta_rates = experiment_log._data[LogFields.ThetaRates][0]
-    displacement_rates = experiment_log._data[LogFields.DisplacementRates][0]
+    # print(experiment_log._data[LogFields.ThetaRates])
 
-    output_images = np.array(output_images).reshape((len(theta_rates), len(displacement_rates)))
+    # theta_rates = experiment_log._data[LogFields.ThetaRates][0]
+    # displacement_rates = experiment_log._data[LogFields.DisplacementRates][0]
 
-    fig, axes = plt.subplots(len(theta_rates), len(displacement_rates), figsize=(16, 16))
-    axes = np.array(axes).reshape((len(theta_rates), len(displacement_rates)))
+    # output_images = np.array(output_images).reshape((len(theta_rates), len(displacement_rates)))
+
+    # fig, axes = plt.subplots(len(theta_rates), len(displacement_rates), figsize=(25, 25))
+    # axes = np.array(axes).reshape((len(theta_rates), len(displacement_rates)))
     
-    for i in range(len(theta_rates)):
-        for j in range(len(displacement_rates)):
-            axes[i, j].set_title("Theta rate: {}\nDisp. rate: {}". format(
-                                 theta_rates[i], 
-                                 displacement_rates[j]))
-            axes[i, j].imshow(output_images[i, j], cmap="gray", aspect='equal')
+    # for i in range(len(theta_rates)):
+    #     for j in range(len(displacement_rates)):
+    #         axes[i, j].set_title("Theta rate: {}\nDisp. rate: {}". format(
+    #                              theta_rates[i], 
+    #                              displacement_rates[j]))
+    #         axes[i, j].imshow(output_images[i, j], cmap="gray")
     
     # fig.tight_layout()
-    plt.show()
+    # plt.show()
 
     # plt.figure()
     # plt.imshow(output_images[0], cmap="gray")
