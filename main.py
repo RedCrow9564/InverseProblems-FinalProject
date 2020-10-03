@@ -40,9 +40,11 @@ def config():
     # General config for experiments
     sample_rate_experiment_config: Dict = {
         "projections_number": 160,
-        "snr_list": [0.0, 0.5],
+        "snr_list": [1000, 0.0001],
         "compared_algorithms": [SolverName.FBP],
-        "theta_rates": [1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 80],
+        # "theta_rates": [1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 80],
+        "theta_rates": [1, 2, 4, 5, 8, 10],
+        # "theta_rates": [16, 20, 32, 40, 80],
         "displacement_rates": [1] # [1, 2, 4]
     }
     fbp_experiment_config: Dict = {
@@ -91,7 +93,7 @@ def main(database_name: str, experiment_type: str, experiment_name: str, results
           len(output_images), len(data)))
 
     print("Before plotting experiment")
-    experiment.plot('Results\\SampleRateExperiment_4')
+    experiment.plot('Results\\SampleRateExperiment_7')
 
     # print("Before plotting experiment")
     # plt.figure()

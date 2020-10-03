@@ -41,10 +41,13 @@ class SampleRateExperiment(BaseExperiment):
             self._true_images, self._thetas, method="Scikit-Image")
         solver = get_solver(SolverName.FBP)
 
+        self._noisy_sinograms = list()
+
         # Experiment with different SNRs
         for snr in self._snr_list:
             noisy_sinograms: ThreeDMatrix = add_noise_by_snr(
                 sinograms, snr=snr, random_generator=self._rng)
+            self._noisy_sinograms.append(noisy_sinograms[0])
             
             # Experiment with different algorithms ("solvers")
             for solver_name in self._solvers_list:
@@ -88,7 +91,17 @@ class SampleRateExperiment(BaseExperiment):
         if self.calculated_output_images is None:
             print("Can't plot because experiment didn't run")
             return
+
+        # Calculated sinogram and noised sinograms for comparison:
+        sinograms_fig, axes = plt.subplots(1, len(self._snr_list), figsize=(20, 20 * len(self._snr_list)))
+        for i, ax in enumerate(axes):
+            ax.set_title("SNR: {}".format(self._snr_list[i]))
+            ax.imshow(self._noisy_sinograms[i], cmap="gray")
+        if plot_name is not None:
+            plt.savefig(plot_name + '_noised_sinograms.jpg')
+
         # Graphs of RMSError by projection downsampling rate (number of thetas) with 2 SNR
+        error_graph_fig = plt.figure(constrained_layout=True)
         rms_error_matrix = np.array(self.data_log._data[LogFields.RMSError]).reshape((len(self._snr_list), len(self._theta_rates)))
         for i, rms_error_vector in enumerate(rms_error_matrix):
             #normalized_rms_error_vector = rms_error_vector / rms_error_vector[0]
@@ -96,7 +109,6 @@ class SampleRateExperiment(BaseExperiment):
         plt.xlabel('Proj rate', fontsize=18)
         plt.ylabel('Normalized RMS error', fontsize=16)
         plt.legend()
-        plt.yscale('log')
         if plot_name is not None:
             plt.savefig(plot_name + '_error_graph.jpg')
 
@@ -117,17 +129,18 @@ class SampleRateExperiment(BaseExperiment):
         reconst_matrix = np.array(self.calculated_output_images).reshape((len(self._snr_list), 
                                                                           len(self._theta_rates),
                                                                           *self._true_images[0].shape))
+        mid = len(self._snr_list)
         l_rate_without_snr_ax.set_title("Low theta")
         l_rate_without_snr_ax.imshow(reconst_matrix[0, 0], cmap="gray")
         m_rate_without_snr_ax.set_title("Med theta")
-        m_rate_without_snr_ax.imshow(reconst_matrix[0, 3], cmap="gray")
+        m_rate_without_snr_ax.imshow(reconst_matrix[0, mid], cmap="gray")
         h_rate_without_snr_ax.set_title("High theta")
         h_rate_without_snr_ax.imshow(reconst_matrix[0, -1], cmap="gray")
 
         l_rate_with_snr_ax.set_title("Low theta + 0.5 SNR")
         l_rate_with_snr_ax.imshow(reconst_matrix[1, 0], cmap="gray")
         m_rate_with_snr_ax.set_title("Med theta + 0.5 SNR")
-        m_rate_with_snr_ax.imshow(reconst_matrix[1, 3], cmap="gray")
+        m_rate_with_snr_ax.imshow(reconst_matrix[1, mid], cmap="gray")
         h_rate_with_snr_ax.set_title("High theta + 0.5 SNR")
         h_rate_with_snr_ax.imshow(reconst_matrix[1, -1], cmap="gray")
 

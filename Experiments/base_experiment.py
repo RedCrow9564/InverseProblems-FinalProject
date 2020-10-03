@@ -28,7 +28,10 @@ def add_noise_by_snr(images: ThreeDMatrix, snr: float, random_generator) -> Thre
     noisy_images: ThreeDMatrix = images.copy()
     for image in noisy_images:
         image_amplitude: float = np.linalg.norm(image, ord='fro')
-        image += random_generator.normal(0, np.sqrt(snr) * image_amplitude, image.shape)
+        image += random_generator.normal(0, np.sqrt(1 / snr) * image_amplitude / float(image.size), image.shape)
+        print("Raw image fro norm: {}, noised image fro norm: {}".format(image_amplitude, np.linalg.norm(image, ord='fro')))
+    # if snr > 0.1:
+    #     a = 1/0
     return noisy_images
 
 
