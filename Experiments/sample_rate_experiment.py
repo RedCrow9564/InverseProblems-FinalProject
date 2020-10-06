@@ -100,7 +100,7 @@ class SampleRateExperiment(BaseExperiment):
         if plot_name is not None:
             plt.savefig(plot_name + '_noised_sinograms.jpg')
 
-        # Graphs of RMSError by projection downsampling rate (number of thetas) with 2 SNR
+        # Graphs of RMSError by projection downsampling rate (number of thetas) with 2 SNRs
         error_graph_fig = plt.figure(constrained_layout=True)
         rms_error_matrix = np.array(self.data_log._data[LogFields.RMSError]).reshape((len(self._snr_list), len(self._theta_rates)))
         for i, rms_error_vector in enumerate(rms_error_matrix):
@@ -109,8 +109,23 @@ class SampleRateExperiment(BaseExperiment):
         plt.xlabel('Proj rate', fontsize=18)
         plt.ylabel('Normalized RMS error', fontsize=16)
         plt.legend()
+        plt.xlim(xmin=0)
+        plt.ylim(ymin=0)
         if plot_name is not None:
             plt.savefig(plot_name + '_error_graph.jpg')
+
+        # Graphs of RMSError by projection number with 2 SNRs
+        error_graph2_fig = plt.figure(constrained_layout=True)
+        # rms_error_matrix = np.array(self.data_log._data[LogFields.RMSError]).reshape((len(self._snr_list), len(self._theta_rates)))
+        for i, rms_error_vector in enumerate(rms_error_matrix):
+            plt.plot(len(self._thetas) / np.array(self._theta_rates), rms_error_vector, ['r', 'g', 'b'][i], label="SNR={}".format(self._snr_list[i]))
+        plt.xlabel('Proj num', fontsize=18)
+        plt.ylabel('Normalized RMS error', fontsize=16)
+        plt.legend()
+        plt.xlim(xmin=0)
+        plt.ylim(ymin=0)
+        if plot_name is not None:
+            plt.savefig(plot_name + '_error_graph2.jpg')
 
         # True image with 6 reconstructions (low/medium/high downsampling rate, 2 SNRs)
         image_reconst_cmp_fig = plt.figure(constrained_layout=True)
@@ -129,19 +144,19 @@ class SampleRateExperiment(BaseExperiment):
         reconst_matrix = np.array(self.calculated_output_images).reshape((len(self._snr_list), 
                                                                           len(self._theta_rates),
                                                                           *self._true_images[0].shape))
-        mid = len(self._snr_list)
-        l_rate_without_snr_ax.set_title("Low theta")
+        mid = len(self._theta_rates) // 2
+        l_rate_without_snr_ax.set_title("ProjRate={}\nSNR={}".format(self._theta_rates[0], self._snr_list[0]))
         l_rate_without_snr_ax.imshow(reconst_matrix[0, 0], cmap="gray")
-        m_rate_without_snr_ax.set_title("Med theta")
+        m_rate_without_snr_ax.set_title("ProjRate={}\nSNR={}".format(self._theta_rates[mid], self._snr_list[0]))
         m_rate_without_snr_ax.imshow(reconst_matrix[0, mid], cmap="gray")
-        h_rate_without_snr_ax.set_title("High theta")
+        h_rate_without_snr_ax.set_title("ProjRate={}\nSNR={}".format(self._theta_rates[-1], self._snr_list[0]))
         h_rate_without_snr_ax.imshow(reconst_matrix[0, -1], cmap="gray")
 
-        l_rate_with_snr_ax.set_title("Low theta + 0.5 SNR")
+        l_rate_with_snr_ax.set_title("ProjRate={}\nSNR={}".format(self._theta_rates[0], self._snr_list[1]))
         l_rate_with_snr_ax.imshow(reconst_matrix[1, 0], cmap="gray")
-        m_rate_with_snr_ax.set_title("Med theta + 0.5 SNR")
+        m_rate_with_snr_ax.set_title("ProjRate={}\nSNR={}".format(self._theta_rates[mid], self._snr_list[1]))
         m_rate_with_snr_ax.imshow(reconst_matrix[1, mid], cmap="gray")
-        h_rate_with_snr_ax.set_title("High theta + 0.5 SNR")
+        h_rate_with_snr_ax.set_title("ProjRate={}\nSNR={}".format(self._theta_rates[-1], self._snr_list[1]))
         h_rate_with_snr_ax.imshow(reconst_matrix[1, -1], cmap="gray")
 
         image_reconst_cmp_fig.tight_layout()
