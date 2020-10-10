@@ -31,6 +31,7 @@ class LogFields(BaseEnum):
     * ``LogFields.RMSError``
     """
     DataType: str = "Data type"
+    ImageIndex: str = "Image index"
     SolverName: str = "Solver name"
     Iterations: str = "Iterations"
     FilterName: str = "Filter Name"

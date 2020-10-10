@@ -81,7 +81,7 @@ def main(database_name: str, experiment_type: str, experiment_name: str, results
     Then it saves all the results to a csv file in the results folder (given in the configuration).
     """
 
-    data: ThreeDMatrix = fetch_data(database_name, 3)
+    data: ThreeDMatrix = fetch_data(database_name, 2)
     # Create an experiment object, and then perform the experiment.
     print("Before creating experiment")
     experiment = ExperimentBuilder.create_experiment(experiment_type, data, database_name)
