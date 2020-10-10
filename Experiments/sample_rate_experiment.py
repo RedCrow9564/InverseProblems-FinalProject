@@ -8,7 +8,6 @@ from itertools import product
 from matplotlib import pyplot as plt
 import random
 
-
 class SampleRateExperiment(BaseExperiment):
     """
     Experiments what happens when the sampling rate is change. 
@@ -20,7 +19,7 @@ class SampleRateExperiment(BaseExperiment):
     """
     @ex.capture(prefix="sample_rate_experiment_config")
     def __init__(self, original_images, data_type, projections_number: int,
-                 compared_algorithms: Vector, snr_list: Vector,
+                 reconstruction_algorithm: str, snr_list: Vector,
                  theta_rates: Vector, displacement_rates: Vector, _seed: int):
         """
         Initializes the experiment with images, metadata, parameters, etc.
@@ -30,20 +29,17 @@ class SampleRateExperiment(BaseExperiment):
                                rows and columns respectively.
         """
         log_fields = [LogFields.SolverName, LogFields.ProjectionsNumber, 
-                      LogFields.SNR, LogFields.DataType, LogFields.ThetaRate,
+                      LogFields.SNR, LogFields.DataType, 
+                      LogFields.ImageIndex, LogFields.ThetaRate,
                       LogFields.DisplacementRate, LogFields.RMSError]
         super(SampleRateExperiment, self).__init__(
             original_images, data_type, _seed, log_fields)
         self._thetas: Vector = np.linspace(0., 180., projections_number, endpoint=False)
         self._displacement_rates = displacement_rates
         self._theta_rates = theta_rates
-        self._solvers_list = compared_algorithms
+        self._solver = reconstruction_algorithm
         self._snr_list = snr_list
         self.calculated_output_images = None
-
-    
-    def _calculate_angular_nyquist_rate(image):
-        pass
 
 
     def run(self) -> DataLog:
@@ -51,9 +47,19 @@ class SampleRateExperiment(BaseExperiment):
         Runs the experiment
         """
         output_images = list()
+        if self._solver == SolverName.FBP:
+            method_name = "Scikit-Image"
+        elif self._solver == SolverName.TVRegularization:
+            method_name = "pylops"
+        else:
+            print("Experiment warning: unidentified solver name.")
+            method_name = "Scikit-Image"
+
         sinograms: ThreeDMatrix = BaseExperiment.radon_transform_all_images(
             self._true_images, self._thetas, method="Scikit-Image")
-        solver = get_solver(SolverName.FBP)
+        
+        # Experiment with given algorithm ("solvers")
+        solver = get_solver(self._solver)
 
         self._noisy_sinograms_by_snr_index = list()
 
@@ -62,44 +68,40 @@ class SampleRateExperiment(BaseExperiment):
             noisy_sinograms: ThreeDMatrix = add_noise_by_snr(
                 sinograms, snr=snr, random_generator=self._rng)
             self._noisy_sinograms_by_snr_index.append(noisy_sinograms)
-            
-            # Experiment with different algorithms ("solvers")
-            for solver_name in self._solvers_list:
-                solver = get_solver(solver_name)
 
-                # Experiment for every (noisy) sinogram on the given DB
-                # for true_image, sinogram in zip(self._true_images,
-                #                                 noisy_sinograms):
-                for image_index, (true_image, sinogram) in enumerate(zip(self._true_images,
-                                                                         noisy_sinograms)):
+            # Experiment for every (noisy) sinogram on the given DB
+            # for true_image, sinogram in zip(self._true_images,
+            #                                 noisy_sinograms):
+            for image_index, (true_image, sinogram) in enumerate(zip(self._true_images,
+                                                                        noisy_sinograms)):
+                
+                # Downsample each sinogram according to given sampling rates
+                for theta_rate, displacement_rate in product(self._theta_rates, 
+                                                            self._displacement_rates):
+
+                    # Attempt reconstructing image by using solver on the downsampled sinogram
+                    downsampled_sinogram = sinogram[::displacement_rate, ::theta_rate]
+                    estimated_image: Matrix = solver(downsampled_sinogram, theta=self._thetas[::theta_rate])
                     
-                    # Downsample each sinogram according to given sampling rates
-                    for theta_rate, displacement_rate in product(self._theta_rates, 
-                                                                self._displacement_rates):
+                    # Calculate error from original image
+                    print("Shape of true_image is {}".format(true_image.shape))
+                    print("Shape of estimated_image is {}".format(estimated_image.shape))
+                    error: Scalar = error_in_circle_pixels(true_image[::displacement_rate,::displacement_rate].reshape((1, estimated_image.shape[0], estimated_image.shape[1])), 
+                                                            estimated_image.reshape((1, estimated_image.shape[0], estimated_image.shape[1])))
+                    print("Error is {}".format(error))
+                    # Place results in log object
+                    self.data_log.append_dict({
+                        LogFields.SolverName: self._solver,
+                        LogFields.ProjectionsNumber: len(self._thetas),
+                        LogFields.SNR: snr,
+                        LogFields.DataType: self._data_type,
+                        LogFields.ImageIndex: image_index,
+                        LogFields.ThetaRate: theta_rate,
+                        LogFields.DisplacementRate: displacement_rate,
+                        LogFields.RMSError: error
+                    })
 
-                        # Attempt reconstructing image by using solver on the downsampled sinogram
-                        downsampled_sinogram = sinogram[::displacement_rate, ::theta_rate]
-                        estimated_image: Matrix = solver(downsampled_sinogram, theta=self._thetas[::theta_rate])
-                        
-                        # Calculate error from original image
-                        print("Shape of true_image is {}".format(true_image.shape))
-                        print("Shape of estimated_image is {}".format(estimated_image.shape))
-                        error: Scalar = error_in_circle_pixels(true_image[::displacement_rate,::displacement_rate].reshape((1, estimated_image.shape[0], estimated_image.shape[1])), 
-                                                               estimated_image.reshape((1, estimated_image.shape[0], estimated_image.shape[1])))
-                        print("Error is {}".format(error))
-                        # Place results in log object
-                        self.data_log.append_dict({
-                            LogFields.SolverName: solver_name,
-                            LogFields.ProjectionsNumber: len(self._thetas),
-                            LogFields.SNR: snr,
-                            LogFields.DataType: self._data_type,
-                            #LogFields.ImageIndex: image_index,
-                            LogFields.ThetaRate: theta_rate,
-                            LogFields.DisplacementRate: displacement_rate,
-                            LogFields.RMSError: error
-                        })
-
-                        output_images.append(deepcopy(estimated_image))
+                    output_images.append(deepcopy(estimated_image))
         
         self.calculated_output_images = output_images
         return self.data_log, output_images
