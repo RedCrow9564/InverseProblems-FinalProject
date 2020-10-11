@@ -7,6 +7,7 @@ from Solvers import get_solver
 from itertools import product
 from matplotlib import pyplot as plt
 import random
+from skimage.transform import resize
 
 class SampleRateExperiment(BaseExperiment):
     """
@@ -47,16 +48,23 @@ class SampleRateExperiment(BaseExperiment):
         Runs the experiment
         """
         output_images = list()
-        if self._solver == SolverName.FBP:
+        if self._solver in (SolverName.FBP, SolverName.SART):
             method_name = "Scikit-Image"
-        elif self._solver == SolverName.TVRegularization:
-            method_name = "pylops"
+        elif self._solver in (SolverName.L1Regularization, 
+                              SolverName.L2Regularization, 
+                              SolverName.TVRegularization):
+            method_name = "Pylops"
         else:
-            print("Experiment warning: unidentified solver name.")
-            method_name = "Scikit-Image"
+            raise ValueError("Invalid solver {}".format(self._solver))
 
-        sinograms: ThreeDMatrix = BaseExperiment.radon_transform_all_images(
-            self._true_images, self._thetas, method="Scikit-Image")
+        radon_transform_result: ThreeDMatrix = BaseExperiment.radon_transform_all_images(
+            self._true_images, self._thetas, method=method_name)
+        if method_name == "Scikit-Image":
+            sinograms = radon_transform_result
+        elif method_name == "Pylops":
+            sinograms, R = radon_transform_result
+        else:
+            raise ValueError("Invalid radon transform method {}".format(method_name))
         
         # Experiment with given algorithm ("solvers")
         solver = get_solver(self._solver)
@@ -81,13 +89,34 @@ class SampleRateExperiment(BaseExperiment):
 
                     # Attempt reconstructing image by using solver on the downsampled sinogram
                     downsampled_sinogram = sinogram[::displacement_rate, ::theta_rate]
-                    estimated_image: Matrix = solver(downsampled_sinogram, theta=self._thetas[::theta_rate])
+                    if self._solver == SolverName.FBP:
+                        estimated_image: Matrix = solver(downsampled_sinogram, theta=self._thetas[::theta_rate])
+                    elif self._solver == SolverName.L1Regularization:
+                        ITERATIONS = 5
+                        ALPHA = 0.01
+                        # downsampled_R = R.apply_columns(R.shape[::theta_rate])
+                        # print(downsampled_R.shape)
+                        downsampled_sinogram = resize(downsampled_sinogram, sinogram.shape, anti_aliasing=False)
+                        print("Size of downsampled sinogram is {}".format(downsampled_sinogram.shape))
+                        downsampled_thetas = self._thetas[::theta_rate]
+                        print("Size of downsampled thetas is {}".format(downsampled_thetas.shape))
+                        print("Size of R is {}".format(R.shape))
+                        estimated_image: Matrix = solver(np.expand_dims(downsampled_sinogram, 0),
+                                                         ITERATIONS, downsampled_thetas,
+                                                         ALPHA, true_image.shape, R)[0]
+                    else:
+                        raise ValueError("Invalid solver {}".format(self._solver))
                     
                     # Calculate error from original image
                     print("Shape of true_image is {}".format(true_image.shape))
                     print("Shape of estimated_image is {}".format(estimated_image.shape))
-                    error: Scalar = error_in_circle_pixels(true_image[::displacement_rate,::displacement_rate].reshape((1, estimated_image.shape[0], estimated_image.shape[1])), 
-                                                            estimated_image.reshape((1, estimated_image.shape[0], estimated_image.shape[1])))
+                    # Calculates error by comparing reconstructed downsampled singoram to downsampled true image
+                    # error: Scalar = error_in_circle_pixels(true_image[::displacement_rate,::displacement_rate].reshape((1, estimated_image.shape[0], estimated_image.shape[1])), 
+                    #                                         estimated_image.reshape((1, estimated_image.shape[0], estimated_image.shape[1])))
+                    # Calculates error by comparing rescaled reconstructed downsampled sinogram to true images
+                    error: Scalar = error_in_circle_pixels(np.expand_dims(true_image, 0), 
+                                                           np.expand_dims(resize(estimated_image, true_image.shape, 
+                                                                                 anti_aliasing=False), 0))
                     print("Error is {}".format(error))
                     # Place results in log object
                     self.data_log.append_dict({

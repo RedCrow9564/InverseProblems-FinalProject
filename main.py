@@ -41,7 +41,7 @@ def config():
     sample_rate_experiment_config: Dict = {
         "projections_number": 160,
         "snr_list": [1000, 0.0001],
-        "reconstruction_algorithm": SolverName.FBP,
+        "reconstruction_algorithm": SolverName.L1Regularization, #SolverName.FBP,
         "theta_rates": [1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 80, 160],
         # "theta_rates": [1, 2, 4, 5, 8, 10],
         # "theta_rates": [16, 20, 32, 40, 80],
