@@ -38,6 +38,7 @@ class LogFields(BaseEnum):
     ProjectionsNumber: str = "Projections Number"
     SNR: str = "SNR"
     RMSError: str = "RMS Error"
+    RegularizarionParameter: str = "Regularization Parameter"
 
 
 class ExperimentType(BaseEnum):

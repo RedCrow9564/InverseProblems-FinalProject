@@ -47,15 +47,28 @@ def fetch_shepp_logan_phantom() -> ThreeDMatrix:
     image: Matrix = shepp_logan_phantom()
     image = rescale(image, scale=0.2, mode='reflect', multichannel=False)
     image: ThreeDMatrix = image.reshape((1, image.shape[0], image.shape[1]))
-    return image    
+    return image
+
+
+def _zero_outside_circle(data: ThreeDMatrix) -> ThreeDMatrix:
+    img_shape: Vector = np.array(data.shape[1:])
+    radius: float = min(img_shape) // 2
+    coords = np.array(np.ogrid[:img_shape[0], :img_shape[1]],
+                      dtype=object)
+    dist = ((coords - img_shape // 2) ** 2).sum(0)
+    indices_mask = dist > radius ** 2
+    
+    data[:, indices_mask] = 0
+    return data
     
 
 def fetch_data(db_type: str, db_size: Union[int, None]=None) -> ThreeDMatrix:
     if db_type == DBType.Random:
         pass  # TODO: Create random data generation function
     elif db_type == DBType.SheppLogan:
-        return fetch_shepp_logan_phantom()
+        data = fetch_shepp_logan_phantom()
     elif db_type == DBType.COVID19_CT_Scans:
-        return fetch_covid19_db(db_size=db_size)
+        data = fetch_covid19_db(db_size=db_size)
     elif db_type == DBType.CT_Medical_Images:
-        return fetch_medical_images_kaggle_db(db_size=db_size)
+        data = fetch_medical_images_kaggle_db(db_size=db_size)
+    return _zero_outside_circle(data)
