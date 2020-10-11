@@ -63,7 +63,7 @@ class IterationsExperiment(BaseExperiment):
                         LogFields.Iterations: i + 1,
                         LogFields.SNR: snr,
                         LogFields.RMSError: error,
-                        LogFields.RegularizarionParameter: None if is_sart else self._alpha
+                        LogFields.RegularizarionParameter: "None" if is_sart else self._alpha
                     })
                     output_images.append(deepcopy(estimated_images))
         

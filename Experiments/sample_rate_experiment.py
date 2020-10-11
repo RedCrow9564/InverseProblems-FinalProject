@@ -48,23 +48,8 @@ class SampleRateExperiment(BaseExperiment):
         Runs the experiment
         """
         output_images = list()
-        if self._solver in (SolverName.FBP, SolverName.SART):
-            method_name = "Scikit-Image"
-        elif self._solver in (SolverName.L1Regularization, 
-                              SolverName.L2Regularization, 
-                              SolverName.TVRegularization):
-            method_name = "Pylops"
-        else:
-            raise ValueError("Invalid solver {}".format(self._solver))
 
-        radon_transform_result: ThreeDMatrix = BaseExperiment.radon_transform_all_images(
-            self._true_images, self._thetas, method=method_name)
-        if method_name == "Scikit-Image":
-            sinograms = radon_transform_result
-        elif method_name == "Pylops":
-            sinograms, R = radon_transform_result
-        else:
-            raise ValueError("Invalid radon transform method {}".format(method_name))
+        sinograms, R = BaseExperiment.radon_transform_all_images(self._true_images, self._thetas)
         
         # Experiment with given algorithm ("solvers")
         solver = get_solver(self._solver)
@@ -89,21 +74,19 @@ class SampleRateExperiment(BaseExperiment):
 
                     # Attempt reconstructing image by using solver on the downsampled sinogram
                     downsampled_sinogram = sinogram[::displacement_rate, ::theta_rate]
+                    downsampled_thetas = self._thetas[::theta_rate]
+                    print("Size of downsampled sinogram is {}".format(downsampled_sinogram.shape))
+                    print("Size of downsampled thetas is {}".format(downsampled_thetas.shape))
                     if self._solver == SolverName.FBP:
-                        estimated_image: Matrix = solver(downsampled_sinogram, theta=self._thetas[::theta_rate])
-                    elif self._solver == SolverName.L1Regularization:
-                        ITERATIONS = 5
+                        estimated_image: Matrix = solver(downsampled_sinogram, self._thetas[::theta_rate], 'ramp')
+                    elif self._solver in (SolverName.L1Regularization, SolverName.L2Regularization, SolverName.TVRegularization):
                         ALPHA = 0.01
-                        # downsampled_R = R.apply_columns(R.shape[::theta_rate])
-                        # print(downsampled_R.shape)
-                        downsampled_sinogram = resize(downsampled_sinogram, sinogram.shape, anti_aliasing=False)
-                        print("Size of downsampled sinogram is {}".format(downsampled_sinogram.shape))
-                        downsampled_thetas = self._thetas[::theta_rate]
-                        print("Size of downsampled thetas is {}".format(downsampled_thetas.shape))
+                        interpolated_downsampled_sinogram = resize(downsampled_sinogram, sinogram.shape, anti_aliasing=False)
                         print("Size of R is {}".format(R.shape))
-                        estimated_image: Matrix = solver(np.expand_dims(downsampled_sinogram, 0),
-                                                         ITERATIONS, downsampled_thetas,
-                                                         ALPHA, true_image.shape, R)[0]
+                        estimated_image: Matrix = solver(interpolated_downsampled_sinogram, self._thetas,
+                                                         ALPHA, true_image.shape, R, np.zeros_like(true_image))
+                    elif self._solver == SolverName.SART:
+                        estimated_image: Matrix = solver(sinogram, downsampled_thetas, np.zeros_like(true_image))
                     else:
                         raise ValueError("Invalid solver {}".format(self._solver))
                     
@@ -143,7 +126,7 @@ class SampleRateExperiment(BaseExperiment):
 
         # Calculated sinogram and noised sinograms for comparison:
         sinograms_fig, axes = plt.subplots(len(self._true_images), len(self._snr_list))
-        axes = axes.reshape((len(self._true_images), len(self._snr_list)))
+        axes = np.reshape(axes, ((len(self._true_images), len(self._snr_list))))
         for i, j in product(range(len(self._true_images)), range(len(self._snr_list))):
             axes[i, j].set_title("Pic {} with SNR {}".format(i, self._snr_list[j]))
             axes[i, j].imshow(self._noisy_sinograms_by_snr_index[j][i], cmap="gray")
@@ -212,12 +195,13 @@ class SampleRateExperiment(BaseExperiment):
         h_rate_without_snr_ax.set_title("ProjRate={}\nSNR={}".format(self._theta_rates[-1], self._snr_list[0]))
         h_rate_without_snr_ax.imshow(reconst_matrix[0, 0, -1], cmap="gray")
 
-        l_rate_with_snr_ax.set_title("ProjRate={}\nSNR={}".format(self._theta_rates[0], self._snr_list[1]))
-        l_rate_with_snr_ax.imshow(reconst_matrix[1, 0, 0], cmap="gray")
-        m_rate_with_snr_ax.set_title("ProjRate={}\nSNR={}".format(self._theta_rates[mid], self._snr_list[1]))
-        m_rate_with_snr_ax.imshow(reconst_matrix[1, 0, mid], cmap="gray")
-        h_rate_with_snr_ax.set_title("ProjRate={}\nSNR={}".format(self._theta_rates[-1], self._snr_list[1]))
-        h_rate_with_snr_ax.imshow(reconst_matrix[1, 0, -1], cmap="gray")
+        if len(self._snr_list) > 1:
+            l_rate_with_snr_ax.set_title("ProjRate={}\nSNR={}".format(self._theta_rates[0], self._snr_list[1]))
+            l_rate_with_snr_ax.imshow(reconst_matrix[1, 0, 0], cmap="gray")
+            m_rate_with_snr_ax.set_title("ProjRate={}\nSNR={}".format(self._theta_rates[mid], self._snr_list[1]))
+            m_rate_with_snr_ax.imshow(reconst_matrix[1, 0, mid], cmap="gray")
+            h_rate_with_snr_ax.set_title("ProjRate={}\nSNR={}".format(self._theta_rates[-1], self._snr_list[1]))
+            h_rate_with_snr_ax.imshow(reconst_matrix[1, 0, -1], cmap="gray")
 
         image_reconst_cmp_fig.tight_layout()
         if plot_name is not None:
