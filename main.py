@@ -1,4 +1,3 @@
-
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """
@@ -27,7 +26,7 @@ def config():
     """
 
 
-    experiment_name: str = "Test Code"
+    experiment_name: str = "Test after merge"
     database_name: str = DBType.SheppLogan
     experiment_type: str = ExperimentType.SampleRateExperiment
 
@@ -41,28 +40,32 @@ def config():
     sample_rate_experiment_config: Dict = {
         "projections_number": 160,
         "snr_list": [1000, 0.0001],
-        "reconstruction_algorithm": SolverName.L1Regularization, #SolverName.FBP,
+        "reconstruction_algorithm": SolverName.L1Regularization, 
         "theta_rates": [1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 80, 160],
         # "theta_rates": [1, 2, 4, 5, 8, 10],
         # "theta_rates": [16, 20, 32, 40, 80],
         "displacement_rates": [1]
     }
     fbp_experiment_config: Dict = {
-        "fbp_filters_list": ["ramp", "hamming"],
-        "projections_number": 160,
-        "snr_list": [0.0, 0.5]
+        "fbp_filters_list": ["ramp"],
+        "projections_number": 600,
+        "snr_list": [0.0]
     }
     iterations_experiment_config: Dict = {
-        "max_iterations": 1000,
-        "snr_list": [0.0, 0.5],
+        "max_iterations": 5,
+        "snr_list": [0.01],
         "projections_number": 160,
-        "alpha": 0.01,
-        "compared_algorithms": [SolverName.L1Regularization]
+        "alpha": 10,
+        "compared_algorithms": [SolverName.SART,
+                                SolverName.L1Regularization,
+                                SolverName.TVRegularization,
+                                SolverName.L2Regularization]
     }
 
     # Paths config (relative paths, not absolute paths)
     results_path: str = r'Results'
     resources_path: str = r'resources'
+    shepp_logan_scaling_factors: List[float] = [1, 0.2]
     covid19_ct_scans_config: Dict[str, str] = {
         "db_path": r'COVID-19 CT scans',
         "database_file_name": r'COVID19_CT_scans.csv'
@@ -93,35 +96,6 @@ def main(database_name: str, experiment_type: str, experiment_name: str, results
           len(output_images), len(data)))
 
     print("Before plotting experiment")
-    experiment.plot('Results\\SampleRateExperiment_7')
-
-    # print("Before plotting experiment")
-    # plt.figure()
-    # plt.imshow(data[0], cmap="gray")
-    # plt.title("Original Image")
-
-    # print(experiment_log._data[LogFields.ThetaRates])
-
-    # theta_rates = experiment_log._data[LogFields.ThetaRates][0]
-    # displacement_rates = experiment_log._data[LogFields.DisplacementRates][0]
-
-    # output_images = np.array(output_images).reshape((len(theta_rates), len(displacement_rates)))
-
-    # fig, axes = plt.subplots(len(theta_rates), len(displacement_rates), figsize=(25, 25))
-    # axes = np.array(axes).reshape((len(theta_rates), len(displacement_rates)))
-    
-    # for i in range(len(theta_rates)):
-    #     for j in range(len(displacement_rates)):
-    #         axes[i, j].set_title("Theta rate: {}\nDisp. rate: {}". format(
-    #                              theta_rates[i], 
-    #                              displacement_rates[j]))
-    #         axes[i, j].imshow(output_images[i, j], cmap="gray")
-    
-    # fig.tight_layout()
-    # plt.show()
-
-    # plt.figure()
-    # plt.imshow(output_images[0], cmap="gray")
-    # plt.title(experiment_log._data[LogFields.SolverName][0])
+    experiment.plot('{}\\{}'.format(results_path, experiment_name))
     
     experiment_log.save_log(log_file_name=experiment_name, results_folder_path=results_path)

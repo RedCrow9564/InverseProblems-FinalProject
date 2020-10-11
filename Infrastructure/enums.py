@@ -40,6 +40,7 @@ class LogFields(BaseEnum):
     RMSError: str = "RMS Error"
     ThetaRate: str = "Theta Rate"
     DisplacementRate: str = "Displacement Rate"
+    RegularizarionParameter: str = "Regularization Parameter"
 
 
 class ExperimentType(BaseEnum):

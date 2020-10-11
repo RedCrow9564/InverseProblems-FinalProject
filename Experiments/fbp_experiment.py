@@ -1,7 +1,7 @@
 import numpy as np
 from copy import deepcopy
 from Infrastructure.enums import LogFields, SolverName
-from Infrastructure.utils import ex, Scalar, Vector, Matrix, ThreeDMatrix, DataLog
+from Infrastructure.utils import ex, List, Scalar, Vector, ThreeDMatrix, DataLog
 from Experiments.base_experiment import BaseExperiment, add_noise_by_snr, error_in_circle_pixels
 from Solvers import get_solver
 
@@ -31,13 +31,11 @@ class FilteredBackprojectionExperiment(BaseExperiment):
                 sinograms, snr=snr, random_generator=self._rng)
 
             for filter_name in self._filters_list:
-                # Perform Radon Transform on every image.
-                estimated_images = list()
-                for sinogram in noisy_sinograms:
-                    estimated_image: Matrix = solver(sinogram, theta=self._thetas, filter_name=filter_name)
-                    estimated_images.append(estimated_image)
-                estimated_images: ThreeDMatrix = np.array(estimated_images)
-
+                # Perform FBP on every sinogram.
+                estimated_images: ThreeDMatrix = np.empty_like(self._true_images)
+                for i, sinogram in enumerate(noisy_sinograms):
+                    estimated_images[i] = solver(sinogram, self._thetas, filter_name)
+                    
                 # Calc error and place all results in the log object.
                 error: Scalar = error_in_circle_pixels(self._true_images, estimated_images)
                 self.data_log.append_dict({

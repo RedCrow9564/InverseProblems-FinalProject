@@ -7,7 +7,7 @@ from pydicom.pixel_data_handlers.util import apply_modality_lut
 from skimage.data import shepp_logan_phantom
 from skimage.transform import rescale
 from Infrastructure.enums import DBType
-from Infrastructure.utils import ex, Union, Dict, Scalar, Vector, Matrix, ThreeDMatrix
+from Infrastructure.utils import ex, Union, Dict, Scalar, Vector, Matrix, ThreeDMatrix, List
 import matplotlib.pyplot as plt
 
 
@@ -44,10 +44,11 @@ def fetch_medical_images_kaggle_db(resources_path: str, ct_medical_images_kaggle
     return data
 
 
-def fetch_shepp_logan_phantom(db_size=1) -> ThreeDMatrix:
+@ex.capture
+def fetch_shepp_logan_phantom(shepp_logan_scaling_factors: List[float], db_size: int=1) -> ThreeDMatrix:
     images = list()
-    orig_image: Matrix = shepp_logan_phantom()
-    scaling_factors = [1, 0.2][:db_size]
+    orig_image: Matrix = rescale(shepp_logan_phantom(), scale=0.4, mode='reflect', multichannel=False)
+    scaling_factors = shepp_logan_scaling_factors[:db_size]
     for scaling_factor in scaling_factors:
         smaller_image = rescale(orig_image, scale=scaling_factor, mode='reflect', multichannel=False)
         pad_width = int((1 - scaling_factor) * max(orig_image.shape[0], orig_image.shape[1])) // 2
@@ -57,36 +58,33 @@ def fetch_shepp_logan_phantom(db_size=1) -> ThreeDMatrix:
             image = smaller_image
         images.append(image.copy())
     return np.stack(images)
-    # image: Matrix = shepp_logan_phantom()
-    # image = rescale(image, scale=0.2, mode='reflect', multichannel=False)
-    # image: ThreeDMatrix = image.reshape((1, image.shape[0], image.shape[1]))
-    # return image  
+
+
+def _zero_outside_circle(data: ThreeDMatrix) -> ThreeDMatrix:
+    img_shape: Vector = np.array(data.shape[1:])
+    radius: float = min(img_shape) // 2
+    coords = np.array(np.ogrid[:img_shape[0], :img_shape[1]],
+                      dtype=object)
+    dist = ((coords - img_shape // 2) ** 2).sum(0)
+    indices_mask = dist > radius ** 2
+    
+    data[:, indices_mask] = 0
+    return data
     
 
 def fetch_data(db_type: str, db_size: Union[int, None]=None) -> ThreeDMatrix:
     if db_type == DBType.Random:
         pass  # TODO: Create random data generation function
     elif db_type == DBType.SheppLogan:
-        return fetch_shepp_logan_phantom(db_size=db_size)
+        data = fetch_shepp_logan_phantom(db_size=db_size)
     elif db_type == DBType.COVID19_CT_Scans:
-        return fetch_covid19_db(db_size=db_size)
+        data = fetch_covid19_db(db_size=db_size)
     elif db_type == DBType.CT_Medical_Images:
-        return fetch_medical_images_kaggle_db(db_size=db_size)
+        data = fetch_medical_images_kaggle_db(db_size=db_size)
+    return _zero_outside_circle(data)
 
 
 def pad_with_zeros(vector, pad_width, iaxis, kwargs):
     pad_value = kwargs.get('padder', 0)
     vector[:pad_width[0]] = pad_value
     vector[-pad_width[1]:] = pad_value
-
-
-if __name__ == '__main__':
-    slp_db = fetch_shepp_logan_phantom(2)
-    slp = slp_db[1]
-    
-    plt.imshow(slp, cmap="gray")
-    plt.show()
-    print("Shape of first image in SLP DB is: {}".format(slp.shape))
-    print("Shape of second image in SLP DB is: {}".format(slp.shape))
-
-    print("Shape of SLP DB is: {}".format(slp_db.shape))
