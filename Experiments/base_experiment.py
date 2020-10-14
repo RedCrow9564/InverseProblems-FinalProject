@@ -1,6 +1,5 @@
 import numpy as np
 from numpy.random import Generator, PCG64
-from scipy.sparse.linalg import aslinearoperator
 from skimage.transform import radon
 from Infrastructure.utils import Scalar, Vector, Matrix, ThreeDMatrix, List, DataLog
 
@@ -43,6 +42,7 @@ class BaseExperiment:
         self._save_estimated_images: bool = save_estimated_images
         self.data_log = DataLog(log_fields)
         self._rng = Generator(PCG64(seed))  # Set random generator.
+        self._calculated_output_images = None
 
     @staticmethod
     def radon_transform_all_images(images: ThreeDMatrix, thetas: Vector) -> ThreeDMatrix:
@@ -207,10 +207,10 @@ def create_weights(imageShape, theta, numerOfProjections):
     a1 = theta.shape[0] * numerOfProjections
     a2 =  imageShape[0] * imageShape[1]
     weights = np.zeros((a1,a2), dtype=np.float)
-    counter = 0;
+    counter = 0
     for angle_index in range(theta.shape[0]):
         for i_proj in range(numerOfProjections):
             v = _get_w_for_ray(imageShape, theta[angle_index], i_proj)
             weights[counter, :] = v
             counter += 1
-    return aslinearoperator(weights)
+    return weights

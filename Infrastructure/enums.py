@@ -18,6 +18,8 @@ class LogFields(BaseEnum):
 
     * ``LogFields.DataType``
     
+    * ``LogFields.ImageIndex``
+    
     * ``LogFields.SolverName``
     
     * ``LogFields.Iterations``
@@ -29,6 +31,12 @@ class LogFields(BaseEnum):
     * ``LogFields.SNR``
 
     * ``LogFields.RMSError``
+    
+    * ``LogFields.ThetaRate``
+    
+    * ``LogFields.DisplacementRate``
+        
+    * ``LogFields.RegularizarionParameter``
     """
     DataType: str = "Data type"
     ImageIndex: str = "Image index"
@@ -60,6 +68,7 @@ class SolverName(BaseEnum):
     FBP: str = "Filtered-Backprojection"
     ART: str = "ART"
     SART: str = "SART"
+    TruncatedSVD: str = "Truncated SVD"
     L1Regularization: str = "L1 Regularization"
     L2Regularization: str = "L2 Regularization"
     TVRegularization: str = "TV Regularization"

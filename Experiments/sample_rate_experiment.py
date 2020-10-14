@@ -40,7 +40,6 @@ class SampleRateExperiment(BaseExperiment):
         self._theta_rates = theta_rates
         self._solver = reconstruction_algorithm
         self._snr_list = snr_list
-        self.calculated_output_images = None
 
 
     def run(self) -> DataLog:
@@ -115,12 +114,12 @@ class SampleRateExperiment(BaseExperiment):
 
                     output_images.append(deepcopy(estimated_image))
         
-        self.calculated_output_images = output_images
+        self._calculated_output_images = output_images
         return self.data_log, output_images
 
     # ASSUMES ONLY ONE IMAGE!!!
     def plot(self, plot_name=None):
-        if self.calculated_output_images is None:
+        if self._calculated_output_images is None:
             print("Can't plot because experiment didn't run")
             return
 
@@ -183,7 +182,7 @@ class SampleRateExperiment(BaseExperiment):
         true_image_ax.set_title("True image")
         true_image_ax.imshow(self._true_images[0], cmap="gray")
 
-        reconst_matrix = np.array(self.calculated_output_images).reshape((len(self._snr_list), 
+        reconst_matrix = np.array(self._calculated_output_images).reshape((len(self._snr_list), 
                                                                           len(self._true_images),
                                                                           len(self._theta_rates),
                                                                           *self._true_images[0].shape))

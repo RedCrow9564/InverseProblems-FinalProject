@@ -26,9 +26,10 @@ def config():
     """
 
 
-    experiment_name: str = "Test after merge"
+    _seed: int = 1995
+    experiment_name: str = "TEST"
     database_name: str = DBType.SheppLogan
-    experiment_type: str = ExperimentType.SampleRateExperiment
+    experiment_type: str = ExperimentType.IterationsExperiment
 
     # Artificial noise config
     noise_config: Dict = {
@@ -52,20 +53,17 @@ def config():
         "snr_list": [0.0]
     }
     iterations_experiment_config: Dict = {
-        "max_iterations": 5,
-        "snr_list": [0.01],
+        "max_iterations": 1,
+        "snr_list": [1e-2],
         "projections_number": 160,
-        "alpha": 10,
-        "compared_algorithms": [SolverName.SART,
-                                SolverName.L1Regularization,
-                                SolverName.TVRegularization,
-                                SolverName.L2Regularization]
+        "alphas_list": [0.3],
+        "compared_algorithms": [SolverName.TruncatedSVD]
     }
 
     # Paths config (relative paths, not absolute paths)
     results_path: str = r'Results'
     resources_path: str = r'resources'
-    shepp_logan_scaling_factors: List[float] = [1, 0.2]
+    shepp_logan_scaling_factors: List[float] = [1, 0.4]
     covid19_ct_scans_config: Dict[str, str] = {
         "db_path": r'COVID-19 CT scans',
         "database_file_name": r'COVID19_CT_scans.csv'
@@ -84,7 +82,8 @@ def main(database_name: str, experiment_type: str, experiment_name: str, results
     Then it saves all the results to a csv file in the results folder (given in the configuration).
     """
 
-    data: ThreeDMatrix = fetch_data(database_name, 2)
+    data: ThreeDMatrix = fetch_data(database_name, 1)
+
     # Create an experiment object, and then perform the experiment.
     print("Before creating experiment")
     experiment = ExperimentBuilder.create_experiment(experiment_type, data, database_name)

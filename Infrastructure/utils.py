@@ -189,6 +189,10 @@ class DataLog:
         for log_field, data_value in data_dict.items():
             self.append(log_field, data_value)
 
+    def to_pandas(self):
+        df = pd.DataFrame(self._data, columns=self._log_fields)
+        return df
+
     def save_log(self, log_file_name: str, results_folder_path: str) -> None:
         """
         This method saves the log to a file, with the input name, in the input folder path.
@@ -199,5 +203,5 @@ class DataLog:
 
         """
         df = pd.DataFrame(self._data, columns=self._log_fields)
-        df.to_csv(os.path.join(results_folder_path, log_file_name + ".csv"), sep=",", float_format="%.2E", index=False)
+        df.to_csv(os.path.join(results_folder_path, log_file_name + ".csv"), sep=",", float_format="%.5E", index=False)
         ex.info["Experiment Log"] = self._data

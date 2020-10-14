@@ -47,15 +47,16 @@ def fetch_medical_images_kaggle_db(resources_path: str, ct_medical_images_kaggle
 @ex.capture
 def fetch_shepp_logan_phantom(shepp_logan_scaling_factors: List[float], db_size: int=1) -> ThreeDMatrix:
     images = list()
-    orig_image: Matrix = rescale(shepp_logan_phantom(), scale=0.4, mode='reflect', multichannel=False)
+    orig_image: Matrix = shepp_logan_phantom()
+    orig_image = rescale(orig_image, scale=0.1, mode='reflect', multichannel=False)
     scaling_factors = shepp_logan_scaling_factors[:db_size]
     for scaling_factor in scaling_factors:
-        smaller_image = rescale(orig_image, scale=scaling_factor, mode='reflect', multichannel=False)
-        pad_width = int((1 - scaling_factor) * max(orig_image.shape[0], orig_image.shape[1])) // 2
         if scaling_factor < 1:
+            smaller_image = rescale(orig_image, scale=scaling_factor, mode='reflect', multichannel=False)
+            pad_width = int((1 - scaling_factor) * max(orig_image.shape[0], orig_image.shape[1])) // 2
             image = np.pad(smaller_image, pad_width, pad_with_zeros)
         else:
-            image = smaller_image
+            image = orig_image
         images.append(image.copy())
     return np.stack(images)
 
@@ -81,6 +82,10 @@ def fetch_data(db_type: str, db_size: Union[int, None]=None) -> ThreeDMatrix:
         data = fetch_covid19_db(db_size=db_size)
     elif db_type == DBType.CT_Medical_Images:
         data = fetch_medical_images_kaggle_db(db_size=db_size)
+    # from matplotlib import pyplot as plt
+    # a = _zero_outside_circle(data)
+    # plt.imshow(a[0], cmap=plt.cm.Greys_r)
+    # plt.show()
     return _zero_outside_circle(data)
 
 

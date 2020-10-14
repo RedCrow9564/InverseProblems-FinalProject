@@ -1,6 +1,6 @@
 from Solvers.fbp_and_sart import filtered_back_projection, sart
 from Solvers.regularization_methods import l1_regularization, \
-    l2_regularization, total_variation_regularization
+    l2_regularization, total_variation_regularization, TSVD
 
 from Infrastructure.utils import Callable, Dict
 from Infrastructure.enums import SolverName
@@ -10,6 +10,7 @@ from Infrastructure.enums import SolverName
 _name_to_solver: Dict = {
         SolverName.FBP: filtered_back_projection,
         SolverName.SART: sart,
+        SolverName.TruncatedSVD: TSVD,
         SolverName.L1Regularization: l1_regularization,
         SolverName.TVRegularization: total_variation_regularization,
         SolverName.L2Regularization: l2_regularization
