@@ -1,25 +1,52 @@
+# -*- coding: utf-8 -*-
+"""
+base_experiment.py - The basis for all experiments in this project.
+===================================================================
+
+This module contanis the base class for all possible experiments in this project.
+"""
 import numpy as np
 from numpy.random import Generator, PCG64
 from skimage.transform import radon
 from Infrastructure.utils import Scalar, Vector, Matrix, ThreeDMatrix, List, DataLog
 
 
-def error_in_circle_pixels(true_images: Matrix, estimated_images: Matrix) -> float:
+def error_in_circle_pixels(true_images: ThreeDMatrix, estimated_images: ThreeDMatrix) -> Scalar:
+    """
+    This mehtod estimated the error between the true images, and the estimated images.
+    
+    Args:
+        true_images(ThreeDMatrix): The true images.
+        estimated_images(ThreeDMatrix): The estimated images.
+
+    Returns:
+        A scalar value of error.
+    """
     img_shape: Vector = np.array(true_images.shape[1:])
     radius: float = min(img_shape) // 2
-    coords = np.array(np.ogrid[:img_shape[0], :img_shape[1]],
-                      dtype=object)
+    coords = np.array(np.ogrid[:img_shape[0], :img_shape[1]], dtype=object)
     dist = ((coords - img_shape // 2) ** 2).sum(0)
     indices_mask = dist <= radius ** 2
     error: Scalar = np.mean(np.power(true_images[:, indices_mask] - \
-              estimated_images[:, indices_mask], 2))
+        estimated_images[:, indices_mask], 2))
     error = np.sqrt(np.mean(error))
     print(error)
     return error
 
 
-
 def add_noise_by_snr(images: ThreeDMatrix, snr: float, random_generator) -> ThreeDMatrix:
+    """
+    This mehtod applies Radon tranform to all input images, at the requested angles.
+    Then it generates noise according to the input SNR and adds it to the noise.
+
+    Args:
+        images(ThreeDMatrix): Input images.
+        snr(float): A value of SNR for generating noise.
+        random_generator: A random generator for creating noise.
+
+    Returns:
+        A 3D matrix, which are the sinograms of the input images.
+    """
     noisy_images: ThreeDMatrix = images.copy()
     if snr in (0.0, np.inf):
         return noisy_images
@@ -31,7 +58,6 @@ def add_noise_by_snr(images: ThreeDMatrix, snr: float, random_generator) -> Thre
         noise_magnitude_per_pixel /= image_size
         image += random_generator.normal(0, noise_magnitude_per_pixel, image.shape)
     return noisy_images
-
 
 
 class BaseExperiment:
@@ -46,6 +72,15 @@ class BaseExperiment:
 
     @staticmethod
     def radon_transform_all_images(images: ThreeDMatrix, thetas: Vector) -> ThreeDMatrix:
+        """
+        This mehtod applies Radon tranform to all input images, at the requested angles.
+        Args:
+            images(ThreeDMatrix): Input images.
+            thetas(Vector): A list of angles at which the projections are taken.
+
+        Returns:
+            A 3D matrix, which are the sinograms of the input images.
+        """
         sinograms: ThreeDMatrix = np.empty(
             (images.shape[0], images.shape[1], len(thetas)), dtype=np.float64)
         

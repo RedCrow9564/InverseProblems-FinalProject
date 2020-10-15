@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+iterations_experiment.py - The module which performs experiments of iterative algorithms.
+=========================================================================================
+
+This module contanis the class which performs iterative algorithms and tests their performance
+for each iteration.
+"""
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -132,7 +140,11 @@ class IterationsExperiment(BaseExperiment):
                 estimation_ax.imshow(estimated_images[0], cmap="gray")
 
                 error_ax = fig.add_subplot(gs[1, 2 + index])
-                title = r'\textit{' + str(iterations) + ' iterations, }'
+                title = r'\textit{' + str(iterations) + ' iteration'
+                if iterations > 1:
+                    title += 's }'
+                else:
+                    title += '}'
                 if alpha != 'None':
                     title += r' $\alpha$ = \textit{' + str(alpha) + '}'
                 error_ax.set_title(title, fontsize=16)

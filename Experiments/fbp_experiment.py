@@ -1,4 +1,16 @@
+# -*- coding: utf-8 -*-
+"""
+fbp_experiment.py - The module which performs experiments of the FBP algorithm
+=========================================================================================
+
+This module contanis the class which performs the FBP algorithm, for various kinds of the
+filter. For instance, "ramp" filter or "Hamming" filter. 
+"""
 import numpy as np
+import pandas as pd
+import os
+from matplotlib import pyplot as plt
+import matplotlib.image as mpimg
 from copy import deepcopy
 from Infrastructure.enums import LogFields, SolverName
 from Infrastructure.utils import ex, List, Scalar, Vector, ThreeDMatrix, DataLog
@@ -22,16 +34,19 @@ class FilteredBackprojectionExperiment(BaseExperiment):
 
     def run(self) -> DataLog:
         output_images = list()
-        sinograms: ThreeDMatrix = BaseExperiment.radon_transform_all_images(
-            self._true_images, self._thetas, method="Scikit-Image")
+        sinograms, _ = BaseExperiment.radon_transform_all_images(
+            self._true_images, self._thetas)
         solver = get_solver(SolverName.FBP)
+        self._calculated_output_images = dict()
 
         for snr in self._snr_list:
             noisy_sinograms: ThreeDMatrix = add_noise_by_snr(
                 sinograms, snr=snr, random_generator=self._rng)
+            min_error_per_solver = dict()
 
             for filter_name in self._filters_list:
                 # Perform FBP on every sinogram.
+                min_error_per_solver[filter_name] = (None, None, np.inf)
                 estimated_images: ThreeDMatrix = np.empty_like(self._true_images)
                 for i, sinogram in enumerate(noisy_sinograms):
                     estimated_images[i] = solver(sinogram, self._thetas, filter_name)
@@ -46,6 +61,38 @@ class FilteredBackprojectionExperiment(BaseExperiment):
                     LogFields.RMSError: error,
                     LogFields.SolverName: SolverName.FBP
                 })
-                output_images.append(deepcopy(estimated_images))
+
+                if min_error_per_solver[filter_name][2] > error:
+                    min_error_per_solver[filter_name] = (estimated_images.copy(), i + 1, error)
+
+            self._calculated_output_images[snr] = deepcopy(min_error_per_solver)
         
-        return self.data_log, output_images
+        return self.data_log, self._calculated_output_images
+
+    @ex.capture
+    def plot(self, plot_name=None, resources_path=None):
+        plt.rcParams.update(
+            {
+                "text.usetex": True,
+                "font.family": "serif"
+        })
+
+        for snr in self._calculated_output_images.keys():
+            fig = plt.figure(constrained_layout=True)
+            plt.suptitle("\\textit{Results for SNR = " + str(snr) + '}', fontsize=16)
+            gs = fig.add_gridspec(2, 2 + len(self._filters_list))
+            true_image_ax = fig.add_subplot(gs[:, :2])
+            true_image_ax.set_title("True image", fontsize=12)
+            true_image_ax.imshow(self._true_images[0], cmap="gray")
+
+            for index, (filter_name, (estimated_images, iterations, error)) in enumerate(self._calculated_output_images[snr].items()):
+                estimation_ax = fig.add_subplot(gs[0, 2 + index])
+                title = r'\textit{' + filter_name.capitalize() + ' Filter}'
+                estimation_ax.set_title(title, fontsize=12)
+                estimation_ax.imshow(estimated_images[0], cmap="gray")
+
+                error_ax = fig.add_subplot(gs[1, 2 + index])
+                error_ax.set_title(r'\textit{RMS Error ' + str(error)[:6] + '}', fontsize=12)
+                error_ax.imshow(self._true_images[0] - estimated_images[0], cmap="gray")
+
+        plt.show()

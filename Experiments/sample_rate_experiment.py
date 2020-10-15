@@ -82,7 +82,7 @@ class SampleRateExperiment(BaseExperiment):
                         ALPHA = 0.01
                         interpolated_downsampled_sinogram = resize(downsampled_sinogram, sinogram.shape, anti_aliasing=False)
                         print("Size of R is {}".format(R.shape))
-                        estimated_image: Matrix = solver(interpolated_downsampled_sinogram, self._thetas,
+                        estimated_image: Matrix = solver(interpolated_downsampled_sinogram,
                                                          ALPHA, true_image.shape, R, np.zeros_like(true_image))
                     elif self._solver == SolverName.SART:
                         estimated_image: Matrix = solver(sinogram, downsampled_thetas, np.zeros_like(true_image))

@@ -10,11 +10,9 @@ to the configured results folder. Example for running an experiment: ``python ma
 
 """
 from Infrastructure.utils import ex, DataLog, Dict, Union, List, Scalar, Vector, Matrix, ThreeDMatrix
-from Infrastructure.enums import LogFields, DBType, ExperimentType, SolverName
+from Infrastructure.enums import LogFields, DBType, ExperimentType, SolverName, FBPFilter
 from data_generation import fetch_data
 from Experiments import ExperimentBuilder
-from matplotlib import pyplot as plt
-import numpy as np
 
 
 @ex.config
@@ -26,52 +24,53 @@ def config():
     """
 
 
-    _seed: int = 1995
-    experiment_name: str = "TEST"
-    database_name: str = DBType.SheppLogan
-    experiment_type: str = ExperimentType.IterationsExperiment
-
-    # Artificial noise config
-    noise_config: Dict = {
-        "noise_type": "Gaussian",  # Maybe this should be another enum?
-        "signal_noise_ratio": 0.0
-    }
+    _seed: int = 1995  # Random seed.
+    experiment_name: str = "TEST"  # A name for the results csv file. It should be unique for every experiment.
+    database_name: str = DBType.COVID19_CT_Scans  # The used database.
+    experiment_type: str = ExperimentType.IterationsExperiment  # The type of experiment for running.
     
-    # General config for experiments
+    # General config for sample-rate experiments
     sample_rate_experiment_config: Dict = {
         "projections_number": 160,
-        "snr_list": [1000, 0.0001],
-        "reconstruction_algorithm": SolverName.L1Regularization, 
+        "snr_list": [0.0001],
+        "reconstruction_algorithm": SolverName.TVRegularization, 
         "theta_rates": [1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 80, 160],
-        # "theta_rates": [1, 2, 4, 5, 8, 10],
+        #"theta_rates": [1, 2, 4, 5, 8, 10],
         # "theta_rates": [16, 20, 32, 40, 80],
         "displacement_rates": [1]
     }
+
+    # General config for Filtered-Backprojection experiments
     fbp_experiment_config: Dict = {
-        "fbp_filters_list": ["ramp"],
-        "projections_number": 600,
-        "snr_list": [0.0]
+        "fbp_filters_list": [FBPFilter.Ramp, FBPFilter.Hamming, FBPFilter.SheppLogan],
+        "projections_number": 160,  # Number of projections used for Radon-Transform.
+        "snr_list": [0.0, 1e-2]  # List of SNR to use. SNR of np.inf or 0 are both interpreted as having no noise at all.
     }
+
+    # General config for Iterations experiments
     iterations_experiment_config: Dict = {
-        "max_iterations": 1,
-        "snr_list": [1e-2],
-        "projections_number": 160,
-        "alphas_list": [0.3],
-        "compared_algorithms": [SolverName.TruncatedSVD]
+        "max_iterations": 5,  # Iterations for each iteratie algorithm.
+        "snr_list": [0.0],  # List of SNR to use. SNR of np.inf or 0 are both interpreted as having no noise at all.
+        "projections_number": 160,  # Number of projections used for Radon-Transform.
+        "alphas_list": [0.01],  # List of regularization terms for each regularization algorithm.
+        "compared_algorithms": [SolverName.SART,
+                                SolverName.TVRegularization]
     }
 
     # Paths config (relative paths, not absolute paths)
-    results_path: str = r'Results'
-    resources_path: str = r'resources'
-    shepp_logan_scaling_factors: List[float] = [1, 0.4]
-    covid19_ct_scans_config: Dict[str, str] = {
+    results_path: str = r'Results'  # Path for saving csv outputs.
+    resources_path: str = r'resources'  # Path from which local databases are loaded.
+    covid19_ct_scans_config: Dict[str, str] = {  # DB config for the COVID-19 images DB.
         "db_path": r'COVID-19 CT scans',
         "database_file_name": r'COVID19_CT_scans.csv'
     }
-    ct_medical_images_kaggle_config: Dict[str, str] = {
+    ct_medical_images_kaggle_config: Dict[str, str] = {  # DB config for the chest CT images DB from Kaggle.com.
         "db_path": r'CT Medical Images Kaggle DB',
         "database_file_name": r'overview.csv'
     }
+
+    # List of scaling factors to use when generating Shepp-Logan images.
+    shepp_logan_scaling_factors: List[float] = [1, 0.4]
 
 
 @ex.automain
@@ -82,6 +81,7 @@ def main(database_name: str, experiment_type: str, experiment_name: str, results
     Then it saves all the results to a csv file in the results folder (given in the configuration).
     """
 
+    # Loading the requested databse.
     data: ThreeDMatrix = fetch_data(database_name, 1)
 
     # Create an experiment object, and then perform the experiment.
@@ -94,7 +94,9 @@ def main(database_name: str, experiment_type: str, experiment_name: str, results
     print("Experiment done running. {} image reconstructions created from {} images recieved as data".format(
           len(output_images), len(data)))
 
+    # Plotting the graphics for this specific experiment type and results.
     print("Before plotting experiment")
     experiment.plot('{}\\{}'.format(results_path, experiment_name))
     
+    # Saving the experiment output to a CSV file.
     experiment_log.save_log(log_file_name=experiment_name, results_folder_path=results_path)
