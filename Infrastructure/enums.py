@@ -12,6 +12,7 @@ This module contains all possible enums of this project. Most of them are used b
 
 from Infrastructure.utils import BaseEnum
 
+
 class LogFields(BaseEnum):
     """
     The enum class of fields within experiments logs. Possible values:
@@ -118,4 +119,3 @@ class FBPFilter(BaseEnum):
     Ramp: str = "ramp"
     Hamming: str = "hamming"
     SheppLogan: str = "shepp-logan"
-    

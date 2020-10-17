@@ -7,10 +7,7 @@ This module contanis the class which performs the FBP algorithm, for various kin
 filter. For instance, "ramp" filter or "Hamming" filter. 
 """
 import numpy as np
-import pandas as pd
-import os
 from matplotlib import pyplot as plt
-import matplotlib.image as mpimg
 from copy import deepcopy
 from Infrastructure.enums import LogFields, SolverName
 from Infrastructure.utils import ex, List, Scalar, Vector, ThreeDMatrix, DataLog
@@ -19,9 +16,20 @@ from Solvers import get_solver
 
 
 class FilteredBackprojectionExperiment(BaseExperiment):
+    """
+    A class which is responsible for performing filtered-backprojection experiment.
+    """
+
     @ex.capture(prefix="fbp_experiment_config")
     def __init__(self, original_images: ThreeDMatrix, data_type: str, projections_number: int, 
                  fbp_filters_list: Vector, snr_list: Vector, _seed: int):
+        """
+        Constructor for Filtered-Backprojection experiments objects.
+
+        Args:
+            original_images(ThreeDMatrix): A collection of 2D images where original_images[i] is the i-th image.
+            
+        """
         log_fields: List[str] = [
             LogFields.FilterName, LogFields.ProjectionsNumber, 
             LogFields.DataType, LogFields.SNR, LogFields.RMSError,
@@ -33,17 +41,25 @@ class FilteredBackprojectionExperiment(BaseExperiment):
         self._snr_list: Vector = snr_list
 
     def run(self) -> DataLog:
-        output_images = list()
+        """
+        A method for performing the filtered-backprojection experiment.
+
+        Returns:
+            A DataLog object, containing all sampled results of this experiment.
+            
+        """
         sinograms, _ = BaseExperiment.radon_transform_all_images(
             self._true_images, self._thetas)
         solver = get_solver(SolverName.FBP)
         self._calculated_output_images = dict()
 
+        # Plotting every SNR value on a different figure.
         for snr in self._snr_list:
             noisy_sinograms: ThreeDMatrix = add_noise_by_snr(
                 sinograms, snr=snr, random_generator=self._rng)
             min_error_per_solver = dict()
 
+            # Iterating over all requested filters for the Filtered-Backprojection algorithm.
             for filter_name in self._filters_list:
                 # Perform FBP on every sinogram.
                 min_error_per_solver[filter_name] = (None, None, np.inf)
@@ -63,29 +79,35 @@ class FilteredBackprojectionExperiment(BaseExperiment):
                 })
 
                 if min_error_per_solver[filter_name][2] > error:
-                    min_error_per_solver[filter_name] = (estimated_images.copy(), i + 1, error)
+                    min_error_per_solver[filter_name] = (estimated_images.copy(), error)
 
             self._calculated_output_images[snr] = deepcopy(min_error_per_solver)
         
         return self.data_log, self._calculated_output_images
 
     @ex.capture
-    def plot(self, plot_name=None, resources_path=None):
-        plt.rcParams.update(
-            {
+    def plot(self, plot_name=None):
+        """
+        A method for plotting the graphs we are interested in, for this specific experiment.
+        """
+        plt.rcParams.update({
                 "text.usetex": True,
                 "font.family": "serif"
         })
 
+        # Plotting every SNR value on a different figure.
         for snr in self._calculated_output_images.keys():
             fig = plt.figure(constrained_layout=True)
-            plt.suptitle("\\textit{Results for SNR = " + str(snr) + '}', fontsize=16)
+            plt.suptitle("\\textit{Results for SNR = " + str(snr) + ', }' + str(len(self._thetas)) +
+                         "\\textit{ projections}", fontsize=16)
             gs = fig.add_gridspec(2, 2 + len(self._filters_list))
             true_image_ax = fig.add_subplot(gs[:, :2])
             true_image_ax.set_title("True image", fontsize=12)
             true_image_ax.imshow(self._true_images[0], cmap="gray")
 
-            for index, (filter_name, (estimated_images, iterations, error)) in enumerate(self._calculated_output_images[snr].items()):
+            # Each figure contains all results for all filters.
+            for index, (filter_name, (estimated_images, error)) in \
+                    enumerate(self._calculated_output_images[snr].items()):
                 estimation_ax = fig.add_subplot(gs[0, 2 + index])
                 title = r'\textit{' + filter_name.capitalize() + ' Filter}'
                 estimation_ax.set_title(title, fontsize=12)

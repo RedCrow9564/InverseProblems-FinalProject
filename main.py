@@ -9,8 +9,8 @@ Running this module invokes the :func:`main` function, which then performs the e
 to the configured results folder. Example for running an experiment: ``python main.py``
 
 """
-from Infrastructure.utils import ex, DataLog, Dict, Union, List, Scalar, Vector, Matrix, ThreeDMatrix
-from Infrastructure.enums import LogFields, DBType, ExperimentType, SolverName, FBPFilter
+from Infrastructure.utils import ex, Dict, List, ThreeDMatrix
+from Infrastructure.enums import DBType, ExperimentType, SolverName, FBPFilter
 from data_generation import fetch_data
 from Experiments import ExperimentBuilder
 
@@ -23,7 +23,6 @@ def config():
     can be found in :mod:`enums.py`.
     """
 
-
     _seed: int = 1995  # Random seed.
     experiment_name: str = "TEST"  # A name for the results csv file. It should be unique for every experiment.
     database_name: str = DBType.COVID19_CT_Scans  # The used database.
@@ -35,7 +34,7 @@ def config():
         "snr_list": [0.0001],
         "reconstruction_algorithm": SolverName.TVRegularization, 
         "theta_rates": [1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 80, 160],
-        #"theta_rates": [1, 2, 4, 5, 8, 10],
+        # "theta_rates": [1, 2, 4, 5, 8, 10],
         # "theta_rates": [16, 20, 32, 40, 80],
         "displacement_rates": [1]
     }
@@ -44,17 +43,19 @@ def config():
     fbp_experiment_config: Dict = {
         "fbp_filters_list": [FBPFilter.Ramp, FBPFilter.Hamming, FBPFilter.SheppLogan],
         "projections_number": 160,  # Number of projections used for Radon-Transform.
-        "snr_list": [0.0, 1e-2]  # List of SNR to use. SNR of np.inf or 0 are both interpreted as having no noise at all.
+        "snr_list": [0.0, 1e-2]  # List of SNR to use. SNR of np.inf or 0 are both interpreted as having no noise at all
     }
 
     # General config for Iterations experiments
     iterations_experiment_config: Dict = {
-        "max_iterations": 5,  # Iterations for each iteratie algorithm.
-        "snr_list": [0.0],  # List of SNR to use. SNR of np.inf or 0 are both interpreted as having no noise at all.
+        "max_iterations": 3,  # Iterations for each iterative algorithm.
+        "snr_list": [0],  # List of SNR to use. SNR of np.inf or 0 are both interpreted as having no noise at all.
         "projections_number": 160,  # Number of projections used for Radon-Transform.
-        "alphas_list": [0.01],  # List of regularization terms for each regularization algorithm.
+        "alphas_list": [1e-2],  # List of regularization terms for each regularization algorithm.
         "compared_algorithms": [SolverName.SART,
-                                SolverName.TVRegularization]
+                                SolverName.TVRegularization,
+                                SolverName.L1Regularization,
+                                SolverName.L2Regularization]
     }
 
     # Paths config (relative paths, not absolute paths)
@@ -81,7 +82,7 @@ def main(database_name: str, experiment_type: str, experiment_name: str, results
     Then it saves all the results to a csv file in the results folder (given in the configuration).
     """
 
-    # Loading the requested databse.
+    # Loading the requested database.
     data: ThreeDMatrix = fetch_data(database_name, 1)
 
     # Create an experiment object, and then perform the experiment.
@@ -90,8 +91,8 @@ def main(database_name: str, experiment_type: str, experiment_name: str, results
 
     print("Before running experiment")
     
-    experiment_log, output_images  = experiment.run()
-    print("Experiment done running. {} image reconstructions created from {} images recieved as data".format(
+    experiment_log, output_images = experiment.run()
+    print("Experiment done running. {} image reconstructions created from {} images received as data".format(
           len(output_images), len(data)))
 
     # Plotting the graphics for this specific experiment type and results.

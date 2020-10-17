@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 import random
 from skimage.transform import resize
 
+
 class SampleRateExperiment(BaseExperiment):
     """
     Experiments what happens when the sampling rate is change. 
@@ -24,7 +25,7 @@ class SampleRateExperiment(BaseExperiment):
                  theta_rates: Vector, displacement_rates: Vector, _seed: int):
         """
         Initializes the experiment with images, metadata, parameters, etc.
-        .param original_images A 3 dimensional array that repersent the
+        .param original_images A 3 dimensional array that represent the
                                database to test upon. First dimension is index
                                of image in DB, second and third are the images'
                                rows and columns respectively.
@@ -40,7 +41,6 @@ class SampleRateExperiment(BaseExperiment):
         self._theta_rates = theta_rates
         self._solver = reconstruction_algorithm
         self._snr_list = snr_list
-
 
     def run(self) -> DataLog:
         """
@@ -64,8 +64,7 @@ class SampleRateExperiment(BaseExperiment):
             # Experiment for every (noisy) sinogram on the given DB
             # for true_image, sinogram in zip(self._true_images,
             #                                 noisy_sinograms):
-            for image_index, (true_image, sinogram) in enumerate(zip(self._true_images,
-                                                                        noisy_sinograms)):
+            for image_index, (true_image, sinogram) in enumerate(zip(self._true_images, noisy_sinograms)):
                 
                 # Downsample each sinogram according to given sampling rates
                 for theta_rate, displacement_rate in product(self._theta_rates, 

@@ -3,7 +3,7 @@
 data_generation.py - The data generation module of the project
 ==============================================================
 
-This module generates the requesed databse for each experiment, using the method 'fetch_data'.
+This module generates the requested database for each experiment, using the method 'fetch_data'.
 """
 import numpy as np
 import pandas as pd
@@ -14,18 +14,19 @@ from pydicom.pixel_data_handlers.util import apply_modality_lut
 from skimage.data import shepp_logan_phantom
 from skimage.transform import rescale
 from Infrastructure.enums import DBType
-from Infrastructure.utils import ex, Union, Dict, Scalar, Vector, Matrix, ThreeDMatrix, List
-import matplotlib.pyplot as plt
+from Infrastructure.utils import ex, Union, Dict, Vector, Matrix, ThreeDMatrix, List
 
 
 @ex.capture
-def fetch_covid19_db(resources_path: str, covid19_ct_scans_config: Dict[str, str], db_size: Union[int, None]=None) -> ThreeDMatrix:
+def fetch_covid19_db(resources_path: str, covid19_ct_scans_config: Dict[str, str],
+                     db_size: Union[int, None] = None) -> ThreeDMatrix:
     """
-    This function generates the database of COVID-19 images, taken from https://www.kaggle.com/andrewmvd/covid19-ct-scans.
+    This function generates the database of COVID-19 images,
+    taken from https://www.kaggle.com/andrewmvd/covid19-ct-scans.
 
     Args:
         db_size(int or None): The number of images to create. When given None, 
-            or when db_size is larger then the database's size, it creates 
+            or when db_size is larger then the database size, it creates 
             all available images in the database.
 
     Returns:
@@ -40,16 +41,19 @@ def fetch_covid19_db(resources_path: str, covid19_ct_scans_config: Dict[str, str
     for image_path in db[:db_size]:
         actual_path: str = image_path[3:]
         current_image = nib.load(os.path.join(resources_path, db_path, actual_path))
-        image_pixels: Matrix  = current_image.get_fdata()[:, :, 120]  # Using the mid-images in the volume as 2D images.
+        image_pixels: Matrix = current_image.get_fdata()[:, :, 120]  # Using the mid-images in the volume as 2D images.
         arr = np.rot90(np.array(image_pixels))
-        arr = rescale(arr, scale=0.25, mode='reflect', multichannel=False)  # Re-scaling all images, because of RAM limitations.
+        # Re-scaling all images, because of RAM limitations.
+        arr = rescale(arr, scale=0.25, mode='reflect', multichannel=False)
+        arr = (arr - arr.min()) / (arr.max() - arr.min())  # Normalizing each image
         data.append(arr)
     data: ThreeDMatrix = np.array(data, order='C')
     return data
 
 
 @ex.capture
-def fetch_medical_images_kaggle_db(resources_path: str, ct_medical_images_kaggle_config: Dict[str, str], db_size: Union[int, None]=None) -> ThreeDMatrix:
+def fetch_medical_images_kaggle_db(resources_path: str, ct_medical_images_kaggle_config: Dict[str, str],
+                                   db_size: Union[int, None] = None) -> ThreeDMatrix:
     """
     This function generates the database of CT images, taken from https://www.kaggle.com/kmader/siim-medical-images.
 
@@ -69,14 +73,16 @@ def fetch_medical_images_kaggle_db(resources_path: str, ct_medical_images_kaggle
     for image_path in db[:db_size]:
         x = pydicom.dcmread(os.path.join(resources_path, db_path, "dicom_dir", image_path))
         arr = apply_modality_lut(x.pixel_array, x)  # Shift values to Hounsfield Units.
-        arr = rescale(arr, scale=0.25, mode='reflect', multichannel=False)  # Re-scaling all images, because of RAM limitations.
+        # Re-scaling all images, because of RAM limitations.
+        arr = rescale(arr, scale=0.25, mode='reflect', multichannel=False)
+        arr = (arr - arr.min()) / (arr.max() - arr.min())  # Normalizing each image
         data.append(arr)
     data: ThreeDMatrix = np.array(data, order='C')
     return data
 
 
 @ex.capture
-def fetch_shepp_logan_phantom(shepp_logan_scaling_factors: List[float], db_size: int=1) -> ThreeDMatrix:
+def fetch_shepp_logan_phantom(shepp_logan_scaling_factors: List[float], db_size: int = 1) -> ThreeDMatrix:
     """
     This function generates scaled copies of the Shepp-Logan phantom.
 
@@ -124,7 +130,7 @@ def _zero_outside_circle(data: ThreeDMatrix) -> ThreeDMatrix:
     return data
     
 
-def fetch_data(db_type: str, db_size: Union[int, None]=None) -> ThreeDMatrix:
+def fetch_data(db_type: str, db_size: Union[int, None] = None) -> ThreeDMatrix:
     """
     This function generates the desired database.
 
@@ -137,6 +143,7 @@ def fetch_data(db_type: str, db_size: Union[int, None]=None) -> ThreeDMatrix:
     Returns:
         A 3D matrix, the requested database.
     """
+    data = None
     if db_type == DBType.SheppLogan:
         data: ThreeDMatrix = fetch_shepp_logan_phantom(db_size=db_size)
     elif db_type == DBType.COVID19_CT_Scans:
