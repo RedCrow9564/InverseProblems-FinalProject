@@ -51,7 +51,7 @@ class BaseExperiment:
         
         for i, image in enumerate(images):
             sinograms[i] = radon(image, thetas, circle=True)
-        weights: Matrix = create_weights(image.shape, thetas, image.shape[0])
+        weights: Matrix = create_weights(images[0].shape, thetas, images[0].shape[0])
         return sinograms, weights
         
 

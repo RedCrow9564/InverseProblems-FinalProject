@@ -28,8 +28,8 @@ def config():
 
     _seed: int = 1995
     experiment_name: str = "TEST"
-    database_name: str = DBType.SheppLogan
-    experiment_type: str = ExperimentType.IterationsExperiment
+    database_name: str = DBType.COVID19_CT_Scans # DBType.SheppLogan
+    experiment_type: str = ExperimentType.SampleRateExperiment
 
     # Artificial noise config
     noise_config: Dict = {
@@ -40,11 +40,9 @@ def config():
     # General config for experiments
     sample_rate_experiment_config: Dict = {
         "projections_number": 160,
-        "snr_list": [1000, 0.0001],
-        "reconstruction_algorithm": SolverName.L1Regularization, 
+        "snr_list": [np.inf, 0.01],
+        "reconstruction_algorithm": SolverName.SART, 
         "theta_rates": [1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 80, 160],
-        # "theta_rates": [1, 2, 4, 5, 8, 10],
-        # "theta_rates": [16, 20, 32, 40, 80],
         "displacement_rates": [1]
     }
     fbp_experiment_config: Dict = {
