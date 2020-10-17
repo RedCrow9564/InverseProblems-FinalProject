@@ -35,8 +35,6 @@ def config():
         "snr_list": [np.inf], #, 0.01, 0.0001],
         "reconstruction_algorithm": SolverName.FBP, 
         "theta_rates": [1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 80, 160],
-        # "theta_rates": [1, 2, 4, 5, 8, 10],
-        # "theta_rates": [16, 20, 32, 40, 80],
         "displacement_rates": [1]
     }
 

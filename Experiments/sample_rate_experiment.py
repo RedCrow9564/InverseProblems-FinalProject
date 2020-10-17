@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 import random
 from skimage.transform import resize
 
+ITERATIONS = 7
 
 class SampleRateExperiment(BaseExperiment):
     """
@@ -41,6 +42,7 @@ class SampleRateExperiment(BaseExperiment):
         self._theta_rates = theta_rates
         self._solver = reconstruction_algorithm
         self._snr_list = snr_list
+        self._iterations = ITERATIONS
 
     def run(self) -> DataLog:
         """
@@ -79,12 +81,21 @@ class SampleRateExperiment(BaseExperiment):
                         estimated_image: Matrix = solver(downsampled_sinogram, self._thetas[::theta_rate], 'ramp')
                     elif self._solver in (SolverName.L1Regularization, SolverName.L2Regularization, SolverName.TVRegularization):
                         ALPHA = 0.01
-                        interpolated_downsampled_sinogram = resize(downsampled_sinogram, sinogram.shape, anti_aliasing=False)
+                        # interpolated_downsampled_sinogram = resize(downsampled_sinogram, sinogram.shape, anti_aliasing=False)
                         print("Size of R is {}".format(R.shape))
-                        estimated_image: Matrix = solver(interpolated_downsampled_sinogram,
-                                                         ALPHA, true_image.shape, R, np.zeros_like(true_image))
+                        num_of_rays = R.shape[0] // len(self._thetas)
+                        reshaped_R = R.reshape((len(self._thetas), num_of_rays, R.shape[1]))
+                        downsampled_R = reshaped_R[::theta_rate, :, :].reshape((R.shape[0] // theta_rate), R.shape[1])
+                        estimated_image = np.zeros_like(true_image)
+                        for _ in range(self._iterations):
+                            estimated_image: Matrix = solver(downsampled_sinogram,
+                                                            ALPHA, true_image.shape, 
+                                                            downsampled_R, 
+                                                            estimated_image)
                     elif self._solver == SolverName.SART:
-                        estimated_image: Matrix = solver(sinogram, downsampled_thetas, np.zeros_like(true_image))
+                        estimated_image = np.zeros_like(true_image)
+                        for _ in range(self._iterations):
+                            estimated_image: Matrix = solver(downsampled_sinogram, downsampled_thetas, np.zeros_like(estimated_image))
                     else:
                         raise ValueError("Invalid solver {}".format(self._solver))
                     
