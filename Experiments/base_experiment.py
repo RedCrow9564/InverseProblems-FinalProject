@@ -167,7 +167,8 @@ def create_weights(image_shape, theta, number_of_projections):
     
     a1 = theta.shape[0] * number_of_projections
     a2 = image_shape[0] * image_shape[1]
-    weights = np.zeros((a1, a2), dtype=np.float)
+    print((a1, a2))
+    weights = np.zeros((a1, a2), dtype=np.float16)
     counter = 0
     for angle_index in range(theta.shape[0]):
         for i_proj in range(number_of_projections):

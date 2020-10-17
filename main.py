@@ -13,6 +13,7 @@ from Infrastructure.utils import ex, Dict, List, ThreeDMatrix
 from Infrastructure.enums import DBType, ExperimentType, SolverName, FBPFilter
 from data_generation import fetch_data
 from Experiments import ExperimentBuilder
+import numpy as np
 
 
 @ex.config
@@ -25,14 +26,14 @@ def config():
 
     _seed: int = 1995  # Random seed.
     experiment_name: str = "TEST"  # A name for the results csv file. It should be unique for every experiment.
-    database_name: str = DBType.COVID19_CT_Scans  # The used database.
-    experiment_type: str = ExperimentType.IterationsExperiment  # The type of experiment for running.
+    database_name: str = DBType.CT_Medical_Images  # The used database.
+    experiment_type: str = ExperimentType.SampleRateExperiment  # The type of experiment for running.
     
     # General config for sample-rate experiments
     sample_rate_experiment_config: Dict = {
         "projections_number": 160,
-        "snr_list": [0.0001],
-        "reconstruction_algorithm": SolverName.TVRegularization, 
+        "snr_list": [np.inf], #, 0.01, 0.0001],
+        "reconstruction_algorithm": SolverName.FBP, 
         "theta_rates": [1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 80, 160],
         # "theta_rates": [1, 2, 4, 5, 8, 10],
         # "theta_rates": [16, 20, 32, 40, 80],
@@ -83,7 +84,7 @@ def main(database_name: str, experiment_type: str, experiment_name: str, results
     """
 
     # Loading the requested database.
-    data: ThreeDMatrix = fetch_data(database_name, 1)
+    data: ThreeDMatrix = fetch_data(database_name, 6)
 
     # Create an experiment object, and then perform the experiment.
     print("Before creating experiment")

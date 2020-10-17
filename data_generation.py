@@ -15,6 +15,7 @@ from skimage.data import shepp_logan_phantom
 from skimage.transform import rescale
 from Infrastructure.enums import DBType
 from Infrastructure.utils import ex, Union, Dict, Vector, Matrix, ThreeDMatrix, List
+from nilearn.image import resample_img
 
 
 @ex.capture
@@ -41,14 +42,17 @@ def fetch_covid19_db(resources_path: str, covid19_ct_scans_config: Dict[str, str
     for image_path in db[:db_size]:
         actual_path: str = image_path[3:]
         current_image = nib.load(os.path.join(resources_path, db_path, actual_path))
-        image_pixels: Matrix = current_image.get_fdata()[:, :, 120]  # Using the mid-images in the volume as 2D images.
+        # print(current_image.shape)
+        current_image = resample_img(current_image, target_affine=np.eye(3)*4., interpolation='nearest')
+        # print(current_image.shape)
+        image_pixels: Matrix = current_image.get_fdata()[:, :, 120 // 4]  # Using the mid-images in the volume as 2D images.
         arr = np.rot90(np.array(image_pixels))
         # Re-scaling all images, because of RAM limitations.
-        arr = rescale(arr, scale=0.25, mode='reflect', multichannel=False)
+        # arr = rescale(arr, scale=0.5, mode='reflect', multichannel=False)
         arr = (arr - arr.min()) / (arr.max() - arr.min())  # Normalizing each image
         data.append(arr)
-    data: ThreeDMatrix = np.array(data, order='C')
-    return data
+    data_as_matrix: ThreeDMatrix = np.stack(data)
+    return data_as_matrix
 
 
 @ex.capture
@@ -150,6 +154,7 @@ def fetch_data(db_type: str, db_size: Union[int, None] = None) -> ThreeDMatrix:
         data: ThreeDMatrix = fetch_covid19_db(db_size=db_size)
     elif db_type == DBType.CT_Medical_Images:
         data: ThreeDMatrix = fetch_medical_images_kaggle_db(db_size=db_size)
+    print(data.shape)
     return _zero_outside_circle(data)
 
 
