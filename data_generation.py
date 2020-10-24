@@ -96,7 +96,7 @@ def fetch_shepp_logan_phantom(shepp_logan_scaling_factors: List[float], db_size:
     """
     images = list()
     orig_image: Matrix = shepp_logan_phantom()
-    orig_image = rescale(orig_image, scale=0.1, mode='reflect', multichannel=False)
+    orig_image = rescale(orig_image, scale=0.4, mode='reflect', multichannel=False)
     scaling_factors = shepp_logan_scaling_factors[:db_size]
     for scaling_factor in scaling_factors:
         if scaling_factor < 1:

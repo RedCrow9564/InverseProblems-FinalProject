@@ -42,10 +42,11 @@ def l1_regularization(sinogram: Matrix, alpha: Scalar, image_shape, R: Matrix, i
         R, Dop, vectorized_sinogram, 1, niterinner, mu=2.0/alpha, 
         epsRL1s=lamda, tol=1e-4, tau=1., show=False,
         x0=initial_image.flatten(), **dict(iter_lim=1, damp=1e-10))
+    sinogram_error: Scalar = np.linalg.norm(R * estimated_image - vectorized_sinogram, ord=2)
 
     # Reshaping the output to the expected image shape
     estimated_image = np.real(estimated_image.reshape(image_shape))
-    return estimated_image
+    return estimated_image, sinogram_error
 
 
 def total_variation_regularization(sinogram: Matrix, alpha: Scalar, image_shape, R: Matrix,
@@ -78,8 +79,9 @@ def total_variation_regularization(sinogram: Matrix, alpha: Scalar, image_shape,
         R, Dop, vectorized_sinogram, 1, niterinner, mu=2.0/alpha, 
         epsRL1s=lamda, tol=1e-4, tau=1., show=False,
         x0=initial_image.flatten(), **dict(iter_lim=1, damp=1e-10))
+    sinogram_error: Scalar = np.linalg.norm(R * estimated_image - vectorized_sinogram, ord=2)
     estimated_image = np.real(estimated_image.reshape(image_shape))
-    return estimated_image
+    return estimated_image, sinogram_error
 
 
 def l2_regularization(sinogram: Matrix, alpha: Scalar, image_shape, R: Matrix, initial_image: Matrix) -> Matrix:
@@ -90,8 +92,9 @@ def l2_regularization(sinogram: Matrix, alpha: Scalar, image_shape, R: Matrix, i
         R, [pylops.Identity(image_size)], vectorized_sinogram,
         x0=initial_image.flatten(), 
         **dict(damp=alpha, iter_lim=1))
+    sinogram_error: Scalar = np.linalg.norm(R * estimated_image - vectorized_sinogram, ord=2)
     estimated_image = np.real(estimated_image.reshape(image_shape))
-    return estimated_image
+    return estimated_image, sinogram_error
 
 
 def TSVD(sinogram: Matrix, alpha: Scalar, image_shape, R: Matrix, initial_image) -> Matrix:
@@ -104,4 +107,5 @@ def TSVD(sinogram: Matrix, alpha: Scalar, image_shape, R: Matrix, initial_image)
     vectorized_sinogram: Vector = sinogram.flatten('F')
     estimated_image = r_inverse_truncated @ vectorized_sinogram
     estimated_image = np.real(estimated_image).reshape(image_shape)
-    return estimated_image
+    sinogram_error: Scalar = np.linalg.norm(R * estimated_image - vectorized_sinogram, ord=2)
+    return estimated_image, sinogram_error

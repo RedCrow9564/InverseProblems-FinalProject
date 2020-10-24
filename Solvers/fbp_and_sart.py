@@ -6,8 +6,9 @@ fbp_and_sart.py - Non-iterative mthods module.
 This module applies the methods of FBP and SART. It uses tha available functions of
 the Scikit-Image package (https://scikit-image.org/).
 """
+import numpy as np
 from skimage.transform import iradon, iradon_sart
-from Infrastructure.utils import Vector, Matrix, ThreeDMatrix
+from Infrastructure.utils import Scalar, Vector, Matrix, ThreeDMatrix
 
 
 def filtered_back_projection(sinogram: Matrix, thetas: Vector, filter_name: str) -> Matrix:
@@ -25,7 +26,7 @@ def filtered_back_projection(sinogram: Matrix, thetas: Vector, filter_name: str)
     return iradon(sinogram, thetas, circle=True, filter_name=filter_name)
 
 
-def sart(sinogram: ThreeDMatrix, thetas: Vector, initial_image: Matrix = None) -> Matrix:
+def sart(sinogram: ThreeDMatrix, thetas: Vector, R: Matrix, initial_image: Matrix = None) -> Matrix:
     """
     This mehtod applies the SART algorithm.
     Args:
@@ -36,4 +37,6 @@ def sart(sinogram: ThreeDMatrix, thetas: Vector, initial_image: Matrix = None) -
     Returns:
         A 2D matrix.
     """
-    return iradon_sart(sinogram, thetas, image=initial_image, dtype=sinogram.dtype)
+    estimated_image: Matrix = iradon_sart(sinogram, thetas, image=initial_image, dtype=sinogram.dtype)
+    sinogram_error: Scalar = np.linalg.norm(R.dot(estimated_image.flatten()) - sinogram.flatten('F'), ord=2)
+    return estimated_image, sinogram_error

@@ -32,6 +32,8 @@ class LogFields(BaseEnum):
     * ``LogFields.SNR``
 
     * ``LogFields.RMSError``
+
+    * ``LogFields.SinogramError``
     
     * ``LogFields.ThetaRate``
     
@@ -47,6 +49,7 @@ class LogFields(BaseEnum):
     ProjectionsNumber: str = "Projections Number"
     SNR: str = "SNR"
     RMSError: str = "RMS Error"
+    SinogramError: str = "Sinogram Error"
     ThetaRate: str = "Theta Rate"
     DisplacementRate: str = "Displacement Rate"
     RegularizarionParameter: str = "Regularization Parameter"

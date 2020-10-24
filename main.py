@@ -25,7 +25,7 @@ def config():
 
     _seed: int = 1995  # Random seed.
     experiment_name: str = "TEST"  # A name for the results csv file. It should be unique for every experiment.
-    database_name: str = DBType.COVID19_CT_Scans  # The used database.
+    database_name: str = DBType.SheppLogan  # The used database.
     experiment_type: str = ExperimentType.IterationsExperiment  # The type of experiment for running.
     
     # General config for sample-rate experiments
@@ -42,16 +42,16 @@ def config():
     # General config for Filtered-Backprojection experiments
     fbp_experiment_config: Dict = {
         "fbp_filters_list": [FBPFilter.Ramp, FBPFilter.Hamming, FBPFilter.SheppLogan],
-        "projections_number": 160,  # Number of projections used for Radon-Transform.
+        "projections_number": 128,  # Number of projections used for Radon-Transform.
         "snr_list": [0.0, 1e-2]  # List of SNR to use. SNR of np.inf or 0 are both interpreted as having no noise at all
     }
 
     # General config for Iterations experiments
     iterations_experiment_config: Dict = {
-        "max_iterations": 3,  # Iterations for each iterative algorithm.
-        "snr_list": [0],  # List of SNR to use. SNR of np.inf or 0 are both interpreted as having no noise at all.
+        "max_iterations": 20,  # Iterations for each iterative algorithm.
+        "snr_list": [0.0, 0.25, 1e-2],  # List of SNR to use. SNR of np.inf or 0 are both interpreted as having no noise at all.
         "projections_number": 160,  # Number of projections used for Radon-Transform.
-        "alphas_list": [1e-2],  # List of regularization terms for each regularization algorithm.
+        "alphas_list": [1e-2, 1, 1e+2, 1e+4, 1e+5, 1e+6],  # List of regularization terms for each regularization algorithm.
         "compared_algorithms": [SolverName.SART,
                                 SolverName.TVRegularization,
                                 SolverName.L1Regularization,

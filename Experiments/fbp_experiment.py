@@ -96,25 +96,39 @@ class FilteredBackprojectionExperiment(BaseExperiment):
         })
 
         # Plotting every SNR value on a different figure.
+        first_snr: bool = True
         for snr in self._calculated_output_images.keys():
             fig = plt.figure(constrained_layout=True)
             plt.suptitle("\\textit{Results for SNR = " + str(snr) + ', }' + str(len(self._thetas)) +
                          "\\textit{ projections}", fontsize=16)
-            gs = fig.add_gridspec(2, 2 + len(self._filters_list))
-            true_image_ax = fig.add_subplot(gs[:, :2])
-            true_image_ax.set_title("True image", fontsize=12)
-            true_image_ax.imshow(self._true_images[0], cmap="gray")
+            gs = None
+            if first_snr:
+                gs = fig.add_gridspec(2, 2 + len(self._filters_list))
+                true_image_ax = fig.add_subplot(gs[:, :2])
+
+                true_image_ax.set_title("True image", fontsize=16)
+                true_image_ax.imshow(self._true_images[0], cmap="gray")
+            else:
+                gs = fig.add_gridspec(2, len(self._filters_list))
 
             # Each figure contains all results for all filters.
             for index, (filter_name, (estimated_images, error)) in \
                     enumerate(self._calculated_output_images[snr].items()):
-                estimation_ax = fig.add_subplot(gs[0, 2 + index])
+                if first_snr:
+                    estimation_ax = fig.add_subplot(gs[0, 2 + index])
+                else:
+                    estimation_ax = fig.add_subplot(gs[0, index])
                 title = r'\textit{' + filter_name.capitalize() + ' Filter}'
                 estimation_ax.set_title(title, fontsize=12)
                 estimation_ax.imshow(estimated_images[0], cmap="gray")
 
-                error_ax = fig.add_subplot(gs[1, 2 + index])
+                if first_snr:
+                    error_ax = fig.add_subplot(gs[1, 2 + index])
+                else:
+                    error_ax = fig.add_subplot(gs[1, index])
                 error_ax.set_title(r'\textit{RMS Error ' + str(error)[:6] + '}', fontsize=12)
                 error_ax.imshow(self._true_images[0] - estimated_images[0], cmap="gray")
+
+            first_snr = False
 
         plt.show()
