@@ -30,13 +30,14 @@ def config():
 
     _seed: int = 1995  # Random seed.
     # experiment_name: str = "ProjectionRateExperiment_FBP_ramp_Medical"  # A name for the results csv file. It should be unique for every experiment.
-    experiment_name: str = "SART_2_ITER"
+    experiment_name: str = "TEST"
     database_name: str = DBType.CT_Medical_Images  # The used database.
     # database_name: str = "Circles"
     # database_name: str = ["Circles",
     #                       DBType.CT_Medical_Images]
-    experiment_type: str = ExperimentType.SampleRateExperiment  # The type of experiment for running.
-    
+    # experiment_type: str = ExperimentType.SampleRateExperiment  # The type of experiment for running.
+    experiment_type: str = ExperimentType.IterationsExperiment  # The type of experiment for running.
+
     # General config for sample-rate experiments
     sample_rate_experiment_config: Dict = {
         "projections_number": 160,

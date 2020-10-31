@@ -23,7 +23,7 @@ def filtered_back_projection(sinogram: Matrix, thetas: Vector, filter_name: str)
     Returns:
         A 2D matrix.
     """
-    return iradon(sinogram, thetas, circle=True, filter_name=filter_name)
+    return iradon(sinogram, thetas, circle=True, filter=filter_name)
 
 
 def sart(sinogram: ThreeDMatrix, thetas: Vector, R: Matrix, initial_image: Matrix = None) -> Matrix:
@@ -37,6 +37,6 @@ def sart(sinogram: ThreeDMatrix, thetas: Vector, R: Matrix, initial_image: Matri
     Returns:
         A 2D matrix.
     """
-    estimated_image: Matrix = iradon_sart(sinogram, thetas, image=initial_image, dtype=sinogram.dtype)
+    estimated_image: Matrix = iradon_sart(sinogram, thetas, image=initial_image)
     sinogram_error: Scalar = np.linalg.norm(R.dot(estimated_image.flatten()) - sinogram.flatten('F'), ord=2)
     return estimated_image, sinogram_error
