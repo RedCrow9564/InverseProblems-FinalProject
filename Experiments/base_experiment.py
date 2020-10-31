@@ -9,7 +9,7 @@ import numpy as np
 from numpy.random import Generator, PCG64
 from skimage.transform import radon
 from Infrastructure.utils import Scalar, Vector, Matrix, ThreeDMatrix, List, DataLog
-
+import hashlib
 
 def error_in_circle_pixels(true_images: ThreeDMatrix, estimated_images: ThreeDMatrix) -> Scalar:
     """
@@ -30,11 +30,10 @@ def error_in_circle_pixels(true_images: ThreeDMatrix, estimated_images: ThreeDMa
     error: Scalar = np.mean(np.power(true_images[:, indices_mask] -
                             estimated_images[:, indices_mask], 2))
     error = np.sqrt(np.mean(error))
-    print(error)
     return error
 
 
-def add_noise_by_snr(images: ThreeDMatrix, snr: float, random_generator) -> ThreeDMatrix:
+def add_noise_by_snr(images: ThreeDMatrix, snr: float, random_generator, is_deterministic=True) -> ThreeDMatrix:
     """
     This method applies Radon transform to all input images, at the requested angles.
     Then it generates noise according to the input SNR and adds it to the noise.
@@ -43,19 +42,27 @@ def add_noise_by_snr(images: ThreeDMatrix, snr: float, random_generator) -> Thre
         images(ThreeDMatrix): Input images.
         snr(float): A value of SNR for generating noise.
         random_generator: A random generator for creating noise.
-
+        is_deterministic(bool): Flag determining if SNR should be calculated
+                                from input (and thus deterministic) or random
+    
     Returns:
         A 3D matrix, which are the sinograms of the input images.
     """
     noisy_images: ThreeDMatrix = images.copy()
     if snr in (0.0, np.inf):
         return noisy_images
-    
+
     image_size: int = float(images[0].size)
     for image in noisy_images:
         image_amplitude: float = np.linalg.norm(image, ord='fro')
         noise_magnitude_per_pixel: float = np.sqrt(1 / snr) * image_amplitude
         noise_magnitude_per_pixel /= image_size
+        # In this case we take the noise to be calculated exactly from input,
+        # and thus deterministic
+        if is_deterministic:
+            s = str(noise_magnitude_per_pixel).encode('utf-8')
+            s += image.tostring()
+            random_generator = Generator(PCG64(int(hashlib.sha1(s).hexdigest(), 16)))
         image += random_generator.normal(0, noise_magnitude_per_pixel, image.shape)
     return noisy_images
 
@@ -167,7 +174,7 @@ def create_weights(image_shape, theta, number_of_projections):
     
     a1 = theta.shape[0] * number_of_projections
     a2 = image_shape[0] * image_shape[1]
-    weights = np.zeros((a1, a2), dtype=np.float)
+    weights = np.zeros((a1, a2), dtype=np.float32)
     counter = 0
     for angle_index in range(theta.shape[0]):
         for i_proj in range(number_of_projections):
