@@ -26,17 +26,19 @@ def config():
     _seed: int = 1995  # Random seed.
     experiment_name: str = "TEST"  # A name for the results csv file. It should be unique for every experiment.
     database_name: str = DBType.SheppLogan  # The used database.
-    experiment_type: str = ExperimentType.IterationsExperiment  # The type of experiment for running.
+    experiment_type: str = ExperimentType.SampleRateExperiment  # The type of experiment for running.
     
     # General config for sample-rate experiments
     sample_rate_experiment_config: Dict = {
         "projections_number": 160,
-        "snr_list": [0.0001],
+        "snr_list": [0.0],
         "reconstruction_algorithm": SolverName.TVRegularization, 
         "theta_rates": [1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 80, 160],
         # "theta_rates": [1, 2, 4, 5, 8, 10],
         # "theta_rates": [16, 20, 32, 40, 80],
-        "displacement_rates": [1]
+        "displacement_rates": [1],
+        "alpha": 0.01,
+        "iterations_number": 1
     }
 
     # General config for Filtered-Backprojection experiments
@@ -48,14 +50,11 @@ def config():
 
     # General config for Iterations experiments
     iterations_experiment_config: Dict = {
-        "max_iterations": 20,  # Iterations for each iterative algorithm.
-        "snr_list": [0.0, 0.25, 1e-2],  # List of SNR to use. SNR of np.inf or 0 are both interpreted as having no noise at all.
-        "projections_number": 160,  # Number of projections used for Radon-Transform.
-        "alphas_list": [1e-2, 1, 1e+2, 1e+4, 1e+5, 1e+6],  # List of regularization terms for each regularization algorithm.
-        "compared_algorithms": [SolverName.SART,
-                                SolverName.TVRegularization,
-                                SolverName.L1Regularization,
-                                SolverName.L2Regularization]
+        "max_iterations": 5,  # Iterations for each iterative algorithm.
+        "snr_list": [0.0],  # List of SNR to use. SNR of np.inf or 0 are both interpreted as having no noise at all.
+        "projections_number": 128,  # Number of projections used for Radon-Transform.
+        "alphas_list": [1e-2],  # List of regularization terms for each regularization algorithm.
+        "compared_algorithms": [SolverName.SART]
     }
 
     # Paths config (relative paths, not absolute paths)

@@ -1,7 +1,7 @@
 import numpy as np
 from Experiments.base_experiment import BaseExperiment, error_in_circle_pixels, add_noise_by_snr
 from copy import deepcopy
-from Infrastructure.enums import LogFields, SolverName
+from Infrastructure.enums import LogFields, SolverName, FBPFilter
 from Infrastructure.utils import ex, Scalar, Vector, Matrix, ThreeDMatrix, DataLog
 from Solvers import get_solver
 from itertools import product
@@ -22,7 +22,8 @@ class SampleRateExperiment(BaseExperiment):
     @ex.capture(prefix="sample_rate_experiment_config")
     def __init__(self, original_images, data_type, projections_number: int,
                  reconstruction_algorithm: str, snr_list: Vector,
-                 theta_rates: Vector, displacement_rates: Vector, _seed: int):
+                 theta_rates: Vector, displacement_rates: Vector, 
+                 alpha: Scalar, iterations_number: int, _seed: int):
         """
         Initializes the experiment with images, metadata, parameters, etc.
         .param original_images A 3 dimensional array that represent the
@@ -41,6 +42,8 @@ class SampleRateExperiment(BaseExperiment):
         self._theta_rates = theta_rates
         self._solver = reconstruction_algorithm
         self._snr_list = snr_list
+        self._alpha: Scalar = alpha
+        self._iterations_number: int = iterations_number
 
     def run(self) -> DataLog:
         """
@@ -73,18 +76,22 @@ class SampleRateExperiment(BaseExperiment):
                     # Attempt reconstructing image by using solver on the downsampled sinogram
                     downsampled_sinogram = sinogram[::displacement_rate, ::theta_rate]
                     downsampled_thetas = self._thetas[::theta_rate]
+                    downsampled_R = R[::theta_rate, :]
                     print("Size of downsampled sinogram is {}".format(downsampled_sinogram.shape))
                     print("Size of downsampled thetas is {}".format(downsampled_thetas.shape))
                     if self._solver == SolverName.FBP:
-                        estimated_image: Matrix = solver(downsampled_sinogram, self._thetas[::theta_rate], 'ramp')
+                        estimated_image: Matrix = solver(downsampled_sinogram, downsampled_thetas, FBPFilter.Ramp)
                     elif self._solver in (SolverName.L1Regularization, SolverName.L2Regularization, SolverName.TVRegularization):
-                        ALPHA = 0.01
-                        interpolated_downsampled_sinogram = resize(downsampled_sinogram, sinogram.shape, anti_aliasing=False)
-                        print("Size of R is {}".format(R.shape))
-                        estimated_image: Matrix = solver(interpolated_downsampled_sinogram,
-                                                         ALPHA, true_image.shape, R, np.zeros_like(true_image))
+                        ALPHA = self._alpha
+                        
+                        #interpolated_downsampled_sinogram = resize(downsampled_sinogram, sinogram.shape, anti_aliasing=False)
+                        print("Size of R is {}".format(downsampled_R.shape))
+                        estimated_image: Matrix = np.zeros_like(true_image)
+                        for i in range(self._iterations_number):
+                            estimated_image, _  = solver(downsampled_sinogram, ALPHA, true_image.shape, 
+                                                         downsampled_R, estimated_image)
                     elif self._solver == SolverName.SART:
-                        estimated_image: Matrix = solver(sinogram, downsampled_thetas, np.zeros_like(true_image))
+                        estimated_image, _ = solver(downsampled_sinogram, downsampled_thetas, downsampled_R, np.zeros_like(true_image))
                     else:
                         raise ValueError("Invalid solver {}".format(self._solver))
                     
