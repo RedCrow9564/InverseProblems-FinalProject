@@ -29,34 +29,21 @@ def config():
     """
 
     _seed: int = 1995  # Random seed.
-    # experiment_name: str = "ProjectionRateExperiment_FBP_ramp_Medical"  # A name for the results csv file. It should be unique for every experiment.
-    experiment_name: str = "TEST"
-    database_name: str = DBType.CT_Medical_Images  # The used database.
-    # database_name: str = "Circles"
-    # database_name: str = ["Circles",
-    #                       DBType.CT_Medical_Images]
-    # experiment_type: str = ExperimentType.SampleRateExperiment  # The type of experiment for running.
-    experiment_type: str = ExperimentType.IterationsExperiment  # The type of experiment for running.
-
+    experiment_name: str = "TEST"  # A name for the results csv file. It should be unique for every experiment.
+    database_name: str = DBType.SheppLogan  # The used database.
+    experiment_type: str = ExperimentType.SampleRateExperiment  # The type of experiment for running.
+    
     # General config for sample-rate experiments
     sample_rate_experiment_config: Dict = {
         "projections_number": 160,
-        # "projections_number": 128,
-        # "snr_list": [np.inf, 0.01],
-        "snr_list": [np.inf],
-        # "snr_list": [0.01],
-        # If true, all noise is decided by data deterministically so solvers
-        # can be cached for noised matrices. Otherwise noise is generated randomally
-        "is_deterministic": True, 
-        "reconstruction_algorithm": SolverName.SART,
+        "snr_list": [0.0],
+        "reconstruction_algorithm": SolverName.TVRegularization, 
         "theta_rates": [1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 80, 160],
-        # "theta_rates": [1, 2, 4, 8, 16, 32, 64, 128],
-        "displacement_rates": [1], # UNIMPLEMENTED. Unexpected behaviour for value different than [1]
-        "fbp_filter": FBPFilter.Hamming, # Relevant for FBP solver
-        # "fbp_filter": None,
-        # "iterations": 7, # Relevant for iterative solvers (L1Reg, L2Reg, TVReg, SART, TSVD)
-        "iterations": 2,
-        "regularization_param_alpha": 0.01 # Relevant for regularization solvers (L1Reg, L2Reg, TVReg)
+        # "theta_rates": [1, 2, 4, 5, 8, 10],
+        # "theta_rates": [16, 20, 32, 40, 80],
+        "displacement_rates": [1],
+        "alpha": 0.01,
+        "iterations_number": 1
     }
 
     # General config for Filtered-Backprojection experiments
@@ -68,9 +55,9 @@ def config():
 
     # General config for Iterations experiments
     iterations_experiment_config: Dict = {
-        "max_iterations": 3,  # Iterations for each iterative algorithm.
-        "snr_list": [0],  # List of SNR to use. SNR of np.inf or 0 are both interpreted as having no noise at all.
-        "projections_number": 160,  # Number of projections used for Radon-Transform.
+        "max_iterations": 5,  # Iterations for each iterative algorithm.
+        "snr_list": [0.0],  # List of SNR to use. SNR of np.inf or 0 are both interpreted as having no noise at all.
+        "projections_number": 128,  # Number of projections used for Radon-Transform.
         "alphas_list": [1e-2],  # List of regularization terms for each regularization algorithm.
         "compared_algorithms": [SolverName.SART,
                                 SolverName.TVRegularization,

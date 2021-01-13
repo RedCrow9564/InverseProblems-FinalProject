@@ -1,7 +1,7 @@
 import numpy as np
 from Experiments.base_experiment import BaseExperiment, error_in_circle_pixels, add_noise_by_snr
 from copy import deepcopy
-from Infrastructure.enums import LogFields, SolverName
+from Infrastructure.enums import LogFields, SolverName, FBPFilter
 from Infrastructure.utils import ex, Scalar, Vector, Matrix, ThreeDMatrix, DataLog
 from Solvers import get_solver
 from itertools import product
@@ -19,8 +19,8 @@ class SampleRateExperiment(BaseExperiment):
     @ex.capture(prefix="sample_rate_experiment_config")
     def __init__(self, original_images, data_type, projections_number: int,
                  reconstruction_algorithm: str, snr_list: Vector,
-                 theta_rates: Vector, displacement_rates: Vector, is_deterministic: bool,
-                 iterations: int, fbp_filter: str, regularization_param_alpha: float, _seed: int):
+                 theta_rates: Vector, displacement_rates: Vector, 
+                 alpha: Scalar, iterations_number: int, _seed: int):
         """
         Initiates a sample rate experiment, to be executed with a given
         configuration from main.py. Configuration is given via parameter
@@ -41,10 +41,8 @@ class SampleRateExperiment(BaseExperiment):
         self._theta_rates = theta_rates
         self._solver = reconstruction_algorithm
         self._snr_list = snr_list
-        self._is_deterministic = is_deterministic
-        self._iterations = iterations
-        self._filter = fbp_filter
-        self._alpha = regularization_param_alpha
+        self._alpha: Scalar = alpha
+        self._iterations_number: int = iterations_number
 
     def run(self) -> DataLog:
         """
@@ -78,35 +76,22 @@ class SampleRateExperiment(BaseExperiment):
 
                     downsampled_sinogram = sinogram[::displacement_rate, ::theta_rate]
                     downsampled_thetas = self._thetas[::theta_rate]
-                    estimated_image = np.zeros_like(true_image)
-                    
-                    print("About to run solver {}".format(self._solver))
-                    print("Shape of downsampled sinogram is {}".format(downsampled_sinogram.shape))
-                    print("Shape of downsampled thetas is {}".format(downsampled_thetas.shape))
-                    
-                    # Attempt reconstructing image by using solver on the downsampled sinogram
+                    downsampled_R = R[::theta_rate, :]
+                    print("Size of downsampled sinogram is {}".format(downsampled_sinogram.shape))
+                    print("Size of downsampled thetas is {}".format(downsampled_thetas.shape))
                     if self._solver == SolverName.FBP:
-                        estimated_image: Matrix = solver(downsampled_sinogram, downsampled_thetas, self._filter)
-                    elif self._solver in (SolverName.L1Regularization, SolverName.L2Regularization, 
-                                          SolverName.TVRegularization, SolverName.TruncatedSVD):
-                        print("Shape of R is {}".format(R.shape))
-                        num_of_rays = R.shape[0] // len(self._thetas)
-                        reshaped_R = R.reshape((len(self._thetas), num_of_rays, R.shape[1]))
-                        downsampled_R = reshaped_R[::theta_rate, :, :].reshape((R.shape[0] // theta_rate),
-                                                                                R.shape[1])
+                        estimated_image: Matrix = solver(downsampled_sinogram, downsampled_thetas, FBPFilter.Ramp)
+                    elif self._solver in (SolverName.L1Regularization, SolverName.L2Regularization, SolverName.TVRegularization):
+                        ALPHA = self._alpha
                         
-                        for _ in range(self._iterations):
-                            estimated_image: Matrix = solver(downsampled_sinogram,
-                                                             self._alpha,
-                                                             true_image.shape, 
-                                                             downsampled_R, 
-                                                             estimated_image)
+                        #interpolated_downsampled_sinogram = resize(downsampled_sinogram, sinogram.shape, anti_aliasing=False)
+                        print("Size of R is {}".format(downsampled_R.shape))
+                        estimated_image: Matrix = np.zeros_like(true_image)
+                        for i in range(self._iterations_number):
+                            estimated_image, _  = solver(downsampled_sinogram, ALPHA, true_image.shape, 
+                                                         downsampled_R, estimated_image)
                     elif self._solver == SolverName.SART:
-                        for _ in range(self._iterations):
-                            estimated_image: Matrix = solver(downsampled_sinogram, 
-                                                             downsampled_thetas, 
-                                                             estimated_image)
-                            
+                        estimated_image, _ = solver(downsampled_sinogram, downsampled_thetas, downsampled_R, np.zeros_like(true_image))
                     else:
                         raise ValueError("Invalid solver {}".format(self._solver))
                     
