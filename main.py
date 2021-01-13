@@ -13,7 +13,12 @@ from Infrastructure.utils import ex, Dict, List, ThreeDMatrix
 from Infrastructure.enums import DBType, ExperimentType, SolverName, FBPFilter
 from data_generation import fetch_data
 from Experiments import ExperimentBuilder
+import numpy as np
+import time
 
+IMAGES_NUMBER = 3
+# IMAGES_NUMBER = 1
+# IMAGES_NUMBER = [2, 2]
 
 @ex.config
 def config():
@@ -44,7 +49,7 @@ def config():
     # General config for Filtered-Backprojection experiments
     fbp_experiment_config: Dict = {
         "fbp_filters_list": [FBPFilter.Ramp, FBPFilter.Hamming, FBPFilter.SheppLogan],
-        "projections_number": 128,  # Number of projections used for Radon-Transform.
+        "projections_number": 160,  # Number of projections used for Radon-Transform.
         "snr_list": [0.0, 1e-2]  # List of SNR to use. SNR of np.inf or 0 are both interpreted as having no noise at all
     }
 
@@ -54,7 +59,10 @@ def config():
         "snr_list": [0.0],  # List of SNR to use. SNR of np.inf or 0 are both interpreted as having no noise at all.
         "projections_number": 128,  # Number of projections used for Radon-Transform.
         "alphas_list": [1e-2],  # List of regularization terms for each regularization algorithm.
-        "compared_algorithms": [SolverName.SART]
+        "compared_algorithms": [SolverName.SART,
+                                SolverName.TVRegularization,
+                                SolverName.L1Regularization,
+                                SolverName.L2Regularization]
     }
 
     # Paths config (relative paths, not absolute paths)
@@ -81,22 +89,27 @@ def main(database_name: str, experiment_type: str, experiment_name: str, results
     Then it saves all the results to a csv file in the results folder (given in the configuration).
     """
 
+    init_time = time.time()
+
     # Loading the requested database.
-    data: ThreeDMatrix = fetch_data(database_name, 1)
+    data: ThreeDMatrix = fetch_data(database_name, IMAGES_NUMBER)
 
     # Create an experiment object, and then perform the experiment.
-    print("Before creating experiment")
+    print("About to create experiment of type {} on database {}".format(
+          experiment_type, database_name))
     experiment = ExperimentBuilder.create_experiment(experiment_type, data, database_name)
 
-    print("Before running experiment")
+    print("Done creating experiment")
+    print("About to run experiment")
     
     experiment_log, output_images = experiment.run()
-    print("Experiment done running. {} image reconstructions created from {} images received as data".format(
-          len(output_images), len(data)))
+    print("Done running experiment, took {}s. {} image reconstructions created from {} images received as data".format(
+          int(time.time() - init_time), len(output_images), len(data)))
 
     # Plotting the graphics for this specific experiment type and results.
-    print("Before plotting experiment")
+    print("About to plot experiment results")
     experiment.plot('{}\\{}'.format(results_path, experiment_name))
-    
+    print("Done plotting experiment results, saving results to csv log file")
+
     # Saving the experiment output to a CSV file.
     experiment_log.save_log(log_file_name=experiment_name, results_folder_path=results_path)
